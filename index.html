@@ -462,10 +462,6 @@ b,strong{font-weight:600}
         <div class="zone__head"><h2 class="zone__title">Open shifts</h2><span class="zone__meta" id="openMeta">Claim in WhenToWork</span></div>
         <div class="zone__body open" id="open"></div>
       </section>
-      <section class="zone z-timeoff">
-        <div class="zone__head"><h2 class="zone__title">Out this week</h2><span class="zone__meta" id="toMeta">Approved time off</span></div>
-        <div class="zone__body to" id="timeoff"></div>
-      </section>
     </div>
 
     <div class="col col--2">
@@ -1010,7 +1006,7 @@ b,strong{font-weight:600}
     }
     return kids.filter(function (k) { return k.hidden; }).length;
   }
-  var META = { open: 'openMeta', events: 'eventsMeta', ann: 'annMeta', timeoff: 'toMeta', bday: 'bdMeta' };
+  var META = { open: 'openMeta', events: 'eventsMeta', ann: 'annMeta', bday: 'bdMeta' };   // Out this week removed from the board (Clifton 10/05/2026)
   /* Four or more shift groups on at once: tighten the cards before anything below them is clipped. */
   function fitRoster() {
     var g = byId('groups'), col = g.closest('.col');
@@ -1043,7 +1039,6 @@ b,strong{font-weight:600}
     renderAnnouncements(board.announcements);
     renderCrew(board);
     renderDuty(board.dutyOfficer);
-    renderTimeOff(board);
     renderCountdown();
     setDeck(board.cards);
     fitAll();
