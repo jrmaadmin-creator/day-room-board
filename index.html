@@ -523,6 +523,7 @@ b,strong{font-weight:600}
     feedTimeoutMs: 8000,                                            // give up on a feed fetch after this and use the last good copy
     staleMinutes: 30,                                               // show a caution when data is older than this
     nightlyReloadHour: 3,
+    nightMode: false,                                               // off (Clifton 10/06/2026): same full board 24 hours; the TV is dimmed instead
     nightStart: 22, nightEnd: 6,                                    // night mode hours (24-hour clock): dimmer board, crew zone and flashcard hidden                                           // full page reload to pick up new deployments
     maxEvents: 7,                                                   // Next 7 days rows before the cap rule (events outrank chores)
     cardQuestionSec: 20,                                            // flashcard: seconds on the question
@@ -687,7 +688,7 @@ b,strong{font-weight:600}
   /* ---------- Clock, date, masthead ---------- */
   function tickClock() {
     var d = now();
-    var night = demo('night') || d.getHours() >= CFG.nightStart || d.getHours() < CFG.nightEnd;
+    var night = demo('night') || (CFG.nightMode && (d.getHours() >= CFG.nightStart || d.getHours() < CFG.nightEnd));
     var b = byId('board'); if (b.classList.contains('is-night') !== night) { b.classList.toggle('is-night', night); if (current) fitAll(); }
     byId('clock').innerHTML = pad(d.getHours()) + ':' + pad(d.getMinutes()) + '<small>' + pad(d.getSeconds()) + '</small>';
     byId('mastDate').textContent = DAYS[d.getDay()] + ', ' + MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
