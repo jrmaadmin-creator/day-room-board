@@ -423,6 +423,13 @@ b,strong{font-weight:600}
 .board.is-night .mast{border-bottom-color:var(--border)}
 .board.is-night .z-bday,.board.is-night .z-cards,.board.is-night .z-timeoff{display:none}
 .board.is-night .mast__clock{color:var(--ink)}
+
+/* "Coming soon" stickers (Clifton 10/06/2026) */
+.sticker{display:inline-block;transform:rotate(-4deg);background:var(--status-caution);color:#14171c;font-weight:800;font-size:var(--t-sec,1rem);letter-spacing:.06em;text-transform:uppercase;padding:.3rem .8rem;border-radius:6px;box-shadow:0 4px 10px rgba(0,0,0,.35);white-space:nowrap;line-height:1.1}
+.unit__check--soon{color:var(--ink-muted)}
+.soon-wrap{position:relative}
+.z-intercept.is-soon #intercept{visibility:hidden}
+.sticker--zone{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-4deg);font-size:1.5rem;padding:.5rem 1.25rem}
 </style>
 </head>
 <body>
@@ -433,7 +440,7 @@ b,strong{font-weight:600}
       <h1 class="mast__title" id="mastTitle">Jaffrey-Rindge Memorial Ambulance</h1>
       <div class="mast__sub">Day room · Jaffrey, New Hampshire</div>
     </div>
-    <div class="mast__center"><div class="mast__date" id="mastDate">Thursday, September 24, 2026</div><div class="mast__count" id="countdown"></div></div>
+    <div class="mast__center"><div class="mast__date" id="mastDate">Thursday, September 24, 2026</div></div>
     <div class="mast__wx" id="mastWx">
       <div class="mast__wxline"><span class="mast__temp" id="wxTemp">--°F</span><span class="mast__desc" id="wxDesc">Loading weather…</span></div>
       <div class="mast__wxmeta" id="wxMeta"></div>
@@ -469,9 +476,9 @@ b,strong{font-weight:600}
         <div class="zone__head"><h2 class="zone__title">Units</h2><span class="zone__meta" id="unitsMeta">Truck check</span></div>
         <div class="zone__body units" id="units"></div>
       </section>
-      <section class="zone z-intercept">
-        <div class="zone__head"><h2 class="zone__title">Medic availability</h2><span class="zone__meta" id="icMeta">Off-duty paramedics</span></div>
-        <div class="zone__body" id="intercept"></div>
+      <section class="zone z-intercept is-soon">
+        <div class="zone__head"><h2 class="zone__title">Medic availability</h2><span class="zone__meta" id="icMeta"></span></div>
+        <div class="zone__body soon-wrap"><div id="intercept"></div><span class="sticker sticker--zone">Coming soon</span></div>
       </section>
       <section class="zone zone--grow">
         <div class="zone__head"><h2 class="zone__title">Next 7 days</h2><span class="zone__meta" id="eventsMeta"></span></div>
@@ -523,6 +530,7 @@ b,strong{font-weight:600}
     feedTimeoutMs: 8000,                                            // give up on a feed fetch after this and use the last good copy
     staleMinutes: 30,                                               // show a caution when data is older than this
     nightlyReloadHour: 3,
+    checksComingSoon: true,                                         // "Coming soon" sticker over truck-check status (OOS still shows)
     nightMode: false,                                               // off (Clifton 10/06/2026): same full board 24 hours; the TV is dimmed instead
     nightStart: 22, nightEnd: 6,                                    // night mode hours (24-hour clock): dimmer board, crew zone and flashcard hidden                                           // full page reload to pick up new deployments
     maxEvents: 7,                                                   // Next 7 days rows before the cap rule (events outrank chores)
@@ -696,7 +704,8 @@ b,strong{font-weight:600}
   function renderCountdown() {
     var t = now(), target = new Date(CFG.transitionDate);
     var days = Math.round((Date.UTC(target.getFullYear(), target.getMonth(), target.getDate()) - Date.UTC(t.getFullYear(), t.getMonth(), t.getDate())) / 86400000);
-    byId('countdown').textContent = days > 0 ? days + ' days to JMA · 01/01/2027' : 'Jaffrey Memorial Ambulance since 01/01/2027';
+    var cd = byId('countdown'); if (!cd) return;   // countdown removed from the board (Clifton 10/06/2026)
+    cd.textContent = days > 0 ? days + ' days to JMA · 01/01/2027' : 'Jaffrey Memorial Ambulance since 01/01/2027';
     if (days <= 0) { byId('mastTitle').textContent = CFG.newName; document.title = 'JMA Day Room Board'; }
   }
 
@@ -775,12 +784,13 @@ b,strong{font-weight:600}
     byId('units').innerHTML = units.map(function (u) {
       var c = by[u], oos = !!(c && c.oos), b, line;
       if (oos) { b = badge('critical', 'OOS'); line = '<div class="unit__check unit__check--critical">' + shape('critical') + 'Not safe <span>· ' + esc(c.when || '') + '</span></div>'; }
-      else if (c && c.state === 'stable') { b = badge('stable', 'In service'); line = '<div class="unit__check unit__check--stable">' + shape('stable') + 'Check ' + esc(c.when) + '</div>'; }
+      else if (c && c.state === 'stable' && !CFG.checksComingSoon) { b = badge('stable', 'In service'); line = '<div class="unit__check unit__check--stable">' + shape('stable') + 'Check ' + esc(c.when) + '</div>'; }
+      else if (CFG.checksComingSoon) { b = '<span class="sticker">Coming soon</span>'; line = '<div class="unit__check unit__check--soon">Truck checks</div>'; }   // sticker until the truck-check forms are in use (Clifton 10/06/2026)
       else { b = badge('caution', 'Check due'); line = '<div class="unit__check unit__check--caution">' + shape('caution') + 'Not checked yet</div>'; }
       return '<div class="unit' + (oos ? ' unit--oos' : '') + '"><div class="unit__head"><span class="unit__id">' + esc(u) + '</span>' + b + '</div>' + line + sioLine(sio[u], !!board.unitStatus) + '</div>';
     }).join('');
     var w = (board.checks && board.checks[0] && board.checks[0].windowStart) ? hhmm(new Date(board.checks[0].windowStart)) : '';
-    byId('unitsMeta').textContent = w ? 'Check window from ' + w : 'Truck check';
+    byId('unitsMeta').textContent = CFG.checksComingSoon ? '' : (w ? 'Check window from ' + w : 'Truck check');
   }
 
   /* ---------- Next 7 days: events and chores. Chores drop first at the cap. ---------- */
