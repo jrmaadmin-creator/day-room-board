@@ -424,8 +424,11 @@ b,strong{font-weight:600}
 .board.is-night .z-bday,.board.is-night .z-cards,.board.is-night .z-timeoff{display:none}
 .board.is-night .mast__clock{color:var(--ink)}
 
+.unit__sio b.sio--in{color:var(--status-stable)}
+.unit__sio b.sio--out{color:var(--status-critical)}
 /* Night dim: same layout, lower brightness (Clifton 10/06/2026) */
-html.is-dim{filter:brightness(var(--dim,.25))}
+#dimOverlay{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:2147483647}
+html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of CSS filter: works in every TV web player */
 /* "Coming soon" stickers (Clifton 10/06/2026) */
 .sticker{display:inline-block;transform:rotate(-4deg);background:var(--status-caution);color:#14171c;font-weight:800;font-size:var(--t-sec,1rem);letter-spacing:.06em;text-transform:uppercase;padding:.3rem .8rem;border-radius:6px;box-shadow:0 4px 10px rgba(0,0,0,.35);white-space:nowrap;line-height:1.1}
 .unit__check--soon{color:var(--ink-muted)}
@@ -702,7 +705,7 @@ html.is-dim{filter:brightness(var(--dim,.25))}
     var night = demo('night') || (CFG.nightMode && (d.getHours() >= CFG.nightStart || d.getHours() < CFG.nightEnd));
     var b = byId('board'); if (b.classList.contains('is-night') !== night) { b.classList.toggle('is-night', night); if (current) fitAll(); }
     var dim = demo('dim') || (CFG.dimStart !== CFG.dimEnd && (d.getHours() >= CFG.dimStart || d.getHours() < CFG.dimEnd));
-    var root = document.documentElement; if (root.classList.contains('is-dim') !== dim) { root.classList.toggle('is-dim', dim); root.style.setProperty('--dim', String(CFG.dimLevel)); }
+    var root = document.documentElement; if (root.classList.contains('is-dim') !== dim) { root.classList.toggle('is-dim', dim); root.style.setProperty('--dim-veil', String(1 - CFG.dimLevel)); if (!byId('dimOverlay')) { var o = document.createElement('div'); o.id = 'dimOverlay'; document.body.appendChild(o); } }
     byId('clock').innerHTML = pad(d.getHours()) + ':' + pad(d.getMinutes()) + '<small>' + pad(d.getSeconds()) + '</small>';
     byId('mastDate').textContent = DAYS[d.getDay()] + ', ' + MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
   }
@@ -780,7 +783,8 @@ html.is-dim{filter:brightness(var(--dim,.25))}
     if (!s || s.status === 'unknown' || !s.since) return '<div class="unit__sio">' + shape('info') + 'In/Out: <span>not reported</span></div>';
     var word = s.status === 'in' ? 'In' : s.status === 'out' ? 'Out' : 'Other', d = new Date(s.since);
     var when = d.toDateString() === now().toDateString() ? hhmm(d) : dow3(d) + ' ' + hhmm(d);
-    return '<div class="unit__sio">' + shape('info') + 'In/Out: <b>' + word + '</b> since ' + when + '</div>';
+    var cls = s.status === 'in' ? ' class="sio--in"' : s.status === 'out' ? ' class="sio--out"' : '';   // In green, Out red (Clifton 10/07/2026)
+    return '<div class="unit__sio">' + shape('info') + 'In/Out: <b' + cls + '>' + word + '</b> since ' + when + '</div>';
   }
   function renderUnits(board) {
     var units = (board.settings && board.settings.units) || ['16A1', '16A2'], by = {};
