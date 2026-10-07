@@ -424,6 +424,8 @@ b,strong{font-weight:600}
 .board.is-night .z-bday,.board.is-night .z-cards,.board.is-night .z-timeoff{display:none}
 .board.is-night .mast__clock{color:var(--ink)}
 
+/* Night dim: same layout, lower brightness (Clifton 10/06/2026) */
+html.is-dim{filter:brightness(var(--dim,.25))}
 /* "Coming soon" stickers (Clifton 10/06/2026) */
 .sticker{display:inline-block;transform:rotate(-4deg);background:var(--status-caution);color:#14171c;font-weight:800;font-size:var(--t-sec,1rem);letter-spacing:.06em;text-transform:uppercase;padding:.3rem .8rem;border-radius:6px;box-shadow:0 4px 10px rgba(0,0,0,.35);white-space:nowrap;line-height:1.1}
 .unit__check--soon{color:var(--ink-muted)}
@@ -531,6 +533,7 @@ b,strong{font-weight:600}
     staleMinutes: 30,                                               // show a caution when data is older than this
     nightlyReloadHour: 3,
     checksComingSoon: true,                                         // "Coming soon" sticker over truck-check status (OOS still shows)
+    dimStart: 20, dimEnd: 6, dimLevel: 0.25,                        // whole board at 25% brightness 20:00-06:00, same layout (Clifton 10/06/2026)
     nightMode: false,                                               // off (Clifton 10/06/2026): same full board 24 hours; the TV is dimmed instead
     nightStart: 22, nightEnd: 6,                                    // night mode hours (24-hour clock): dimmer board, crew zone and flashcard hidden                                           // full page reload to pick up new deployments
     maxEvents: 7,                                                   // Next 7 days rows before the cap rule (events outrank chores)
@@ -698,6 +701,8 @@ b,strong{font-weight:600}
     var d = now();
     var night = demo('night') || (CFG.nightMode && (d.getHours() >= CFG.nightStart || d.getHours() < CFG.nightEnd));
     var b = byId('board'); if (b.classList.contains('is-night') !== night) { b.classList.toggle('is-night', night); if (current) fitAll(); }
+    var dim = demo('dim') || (CFG.dimStart !== CFG.dimEnd && (d.getHours() >= CFG.dimStart || d.getHours() < CFG.dimEnd));
+    var root = document.documentElement; if (root.classList.contains('is-dim') !== dim) { root.classList.toggle('is-dim', dim); root.style.setProperty('--dim', String(CFG.dimLevel)); }
     byId('clock').innerHTML = pad(d.getHours()) + ':' + pad(d.getMinutes()) + '<small>' + pad(d.getSeconds()) + '</small>';
     byId('mastDate').textContent = DAYS[d.getDay()] + ', ' + MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
   }
