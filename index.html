@@ -481,9 +481,9 @@ html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of 
         <div class="zone__head"><h2 class="zone__title">Units</h2><span class="zone__meta" id="unitsMeta">Truck check</span></div>
         <div class="zone__body units" id="units"></div>
       </section>
-      <section class="zone z-intercept is-soon">
+      <section class="zone z-intercept">
         <div class="zone__head"><h2 class="zone__title">Medic availability</h2><span class="zone__meta" id="icMeta"></span></div>
-        <div class="zone__body soon-wrap"><div id="intercept"></div><span class="sticker sticker--zone">Coming soon</span></div>
+        <div class="zone__body"><div id="intercept"></div></div>
       </section>
       <section class="zone zone--grow">
         <div class="zone__head"><h2 class="zone__title">Next 7 days</h2><span class="zone__meta" id="eventsMeta"></span></div>
@@ -535,7 +535,7 @@ html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of 
     feedTimeoutMs: 25000,                                           // give up on a feed fetch after this and use the last good copy
     staleMinutes: 30,                                               // show a caution when data is older than this
     nightlyReloadHour: 3,
-    checksComingSoon: true,                                         // "Coming soon" sticker over truck-check status (OOS still shows)
+    checksComingSoon: false,                                        // "Coming soon" sticker over truck-check status (OOS still shows)
     dimStart: 20, dimEnd: 6, dimLevel: 0.25,                        // whole board at 25% brightness 20:00-06:00, same layout (Clifton 10/06/2026)
     nightMode: false,                                               // off (Clifton 10/06/2026): same full board 24 hours; the TV is dimmed instead
     nightStart: 22, nightEnd: 6,                                    // night mode hours (24-hour clock): dimmer board, crew zone and flashcard hidden                                           // full page reload to pick up new deployments
