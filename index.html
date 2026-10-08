@@ -426,6 +426,9 @@ b,strong{font-weight:600}
 
 .unit__sio b.sio--in{color:var(--status-stable)}
 .unit__sio b.sio--out{color:var(--status-critical)}
+/* Whole In/Out and truck-check lines in green or red (Clifton 10/08/2026) */
+.unit .unit__sio--in,.unit .unit__sio--in b,.unit .unit__check--stable,.unit .unit__check--stable span{color:var(--status-stable)}
+.unit .unit__sio--out,.unit .unit__sio--out b,.unit .unit__check--caution,.unit .unit__check--critical,.unit .unit__check--caution span,.unit .unit__check--critical span{color:var(--status-critical)}
 /* Night dim: same layout, lower brightness (Clifton 10/06/2026) */
 #dimOverlay{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:2147483647}
 html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of CSS filter: works in every TV web player */
@@ -784,7 +787,7 @@ html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of 
     var word = s.status === 'in' ? 'In' : s.status === 'out' ? 'Out' : 'Other', d = new Date(s.since);
     var when = d.toDateString() === now().toDateString() ? hhmm(d) : dow3(d) + ' ' + hhmm(d);
     var cls = s.status === 'in' ? ' class="sio--in"' : s.status === 'out' ? ' class="sio--out"' : '';   // In green, Out red (Clifton 10/07/2026)
-    return '<div class="unit__sio">' + shape('info') + 'In/Out: <b' + cls + '>' + word + '</b> since ' + when + '</div>';
+    return '<div class="unit__sio' + (s.status === 'in' ? ' unit__sio--in' : s.status === 'out' ? ' unit__sio--out' : '') + '">' + shape('info') + 'In/Out: <b' + cls + '>' + word + '</b> since ' + when + '</div>';
   }
   function renderUnits(board) {
     var units = (board.settings && board.settings.units) || ['16A1', '16A2'], by = {};
