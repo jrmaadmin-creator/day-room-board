@@ -202,6 +202,7 @@ svg.shape{width:.7em;height:.7em;fill:currentColor;flex:none}
 .card__cat{font-size:1rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--brand-blue)}
 .card__count{font-family:var(--mono);font-size:1rem;color:var(--ink-subtle)}
 .card__body{min-height:0;overflow:hidden;display:grid;align-content:start;gap:.625rem}
+.card__fit{display:grid;gap:.625rem}   /* shrunk by fitCard so the answer always fits (10/08/2026) */
 .card__q{font-weight:700;font-size:1.625rem;line-height:1.25}
 .card__a{font-size:1.4375rem;line-height:1.3;border-top:1px solid var(--border);padding-top:.625rem}
 .card__a b{color:var(--status-stable);font-family:var(--display);text-transform:uppercase;letter-spacing:.04em;margin-right:.4rem}
@@ -387,6 +388,8 @@ b,strong{font-weight:600}
 .card__cat{font-size:var(--t-meta);font-weight:500;letter-spacing:0;text-transform:none;color:var(--ink-muted)}
 .card__count{font-size:var(--t-meta)}
 .card__q,.card--long .card__q{font-weight:600;font-size:var(--t-body);line-height:1.2}
+.card--answer .card__q{font-size:var(--t-sec);color:var(--ink-muted)}   /* answer side: answer is the big text (10/08/2026) */
+.card--answer .card__a{font-size:var(--t-body);font-weight:600}
 .card__a,.card--long .card__a{font-size:var(--t-sec);line-height:1.3}
 .card__a b{font-weight:600}
 .card__src{font-size:var(--t-meta)}
@@ -546,8 +549,8 @@ html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of 
     nightMode: false,                                               // off (Clifton 10/06/2026): same full board 24 hours; the TV is dimmed instead
     nightStart: 22, nightEnd: 6,                                    // night mode hours (24-hour clock): dimmer board, crew zone and flashcard hidden                                           // full page reload to pick up new deployments
     maxEvents: 7,                                                   // Next 7 days rows before the cap rule (events outrank chores)
-    cardQuestionSec: 20,                                            // flashcard: seconds on the question
-    cardAnswerSec: 12,                                              // flashcard: seconds with the answer shown
+    cardQuestionSec: 30,                                            // flashcard: seconds on the question
+    cardAnswerSec: 10,                                              // flashcard: seconds with the answer shown
     interceptAvailableNote: 'Call the medic, then notify dispatch',  // confirm wording with the Chief (B-05)
     interceptNoneNote: 'Request an ALS intercept through dispatch.'  // confirm wording with the Chief (B-05)
   };
@@ -592,44 +595,252 @@ html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of 
 
   /* ---------- Default flashcard deck (used when the feed has no Flashcards tab rows). Sources on every card. ---------- */
   var DEFAULT_CARDS = [
-    { cat: 'NH protocol', q: 'Intranasal naloxone for an adult: what dose, how often, and what is the endpoint?', a: '1 mg each nostril (2 mg) or a 4 mg spray. Repeat every 5 to 10 minutes, maximum 10 mg. The endpoint is breathing, not waking up.', src: 'NH PCP v9.3, 2.17A' },
-    { cat: 'NH protocol', q: 'Aspirin for suspected ACS: dose, route, and when do you skip it?', a: '324 mg chewed. Skip it if the patient took 324 mg in the last 30 minutes.', src: 'NH PCP v9.3, 3.0' },
-    { cat: 'NH protocol', q: 'Name the three nitroglycerin STOPs.', a: 'SBP 100 or less; a PDE5 inhibitor (sildenafil, vardenafil, tadalafil); IV epoprostenol (Flolan).', src: 'NH PCP v9.3, 3.0' },
-    { cat: 'NH protocol', q: 'When do you give oxygen, and what is the SpO2 target?', a: 'SpO2 94% or less (90% or less in COPD) or short of breath. Target 94 to 98%.', src: 'NH PCP v9.3, 1.0' },
-    { cat: 'NH protocol', q: 'What makes it anaphylaxis for epinephrine?', a: 'Allergen exposure plus any two of: breathing, poor perfusion, skin, GI. Epi 0.3 mg IM, anterolateral thigh; repeat once at 5 minutes.', src: 'NH PCP v9.3, 2.2A' },
-    { cat: 'NH protocol', q: 'Oral glucose: when, and how much?', a: 'BGL under 60 with altered mental status, and able to swallow: 15 to 30 g.', src: 'NH PCP v9.3, 2.11A' },
-    { cat: 'NH protocol', q: 'Stroke Alert: what are the two routes to calling one?', a: 'BGL over 60, not trauma, and a positive screen with last known well under 4.5 hours; or FAST-ED 4 or more with last known well under 24 hours.', src: 'NH PCP v9.3, 2.24' },
-    { cat: 'NH protocol', q: 'Minimum CPR time after arrival before considering termination?', a: '20 minutes of high-quality CPR. No single factor decides; call Medical Control early.', src: 'NH PCP v9.3, 8.15' },
-    { cat: 'NH protocol', q: 'Hypothermic patient: how long is the pulse check?', a: 'A full 60 seconds. Rigor, lividity, and fixed pupils do not stop CPR in hypothermia.', src: 'NH PCP v9.3, 2.12; field card 10' },
-    { cat: 'NH protocol', q: 'Heat stroke: when do you stop active cooling?', a: 'At 102 F, or when shivering cannot be controlled.', src: 'NH PCP v9.3, 2.10' },
-    { cat: 'NH protocol', q: 'Sepsis screen: what are the criteria?', a: 'Suspected infection plus two or more: temp under 96.8 or over 101 F, HR over 90, RR over 20, SBP under 90, new or worse AMS, EtCO2 under 25.', src: 'NH PCP v9.3, 2.21A' },
-    { cat: 'NH protocol', q: 'What does APGAR stand for, and when do you score it?', a: 'Appearance, Pulse, Grimace, Activity, Respiration. At 1 and 5 minutes.', src: 'NH PCP v9.3, 2.6; field card 16' },
-    { cat: 'NH protocol', q: 'Newborn not breathing well or HR under 100: what gas and what rate?', a: 'BVM on room air at 40 to 60 breaths a minute. Reassess the heart rate after 30 seconds.', src: 'NH PCP v9.3, 2.15' },
-    { cat: 'NH protocol', q: 'Newborn compressions: when, and at what ratio?', a: 'HR under 60 after corrected ventilations. 3:1, 90 compressions and 30 breaths a minute, two-thumb technique.', src: 'NH PCP v9.3, 2.15' },
-    { cat: 'NH protocol', q: 'DUMBELLS: what does it stand for?', a: 'Diarrhea, Urination, Miosis, Bronchorrhea, Bradycardia, Emesis, Lacrimation, Salivation.', src: 'Field card 17; NH PCP v9.3, 2.14A' },
-    { cat: 'NH protocol', q: 'Pediatric AED pads: which patients get them?', a: 'Under 8 years old. If none, use adult pads that do not overlap.', src: 'NH PCP v9.3, 3.2P' },
-    { cat: 'NH protocol', q: 'Where does a tourniquet go, and when?', a: '2 to 3 inches above the wound; time it. Do not wait for hypotension.', src: 'NH PCP v9.3, 4.4' },
-    { cat: 'NH protocol', q: 'Trauma red criterion: what systolic BP counts for a patient 65 or older?', a: 'Under 110. Under 65 years old it is under 90.', src: 'NH PCP v9.3, 8.17' },
-    { cat: 'NH protocol', q: 'Which NH Patient Care Protocols are in effect, and since when?', a: 'Version 9.3, effective 11/07/2025.', src: 'Field cards v1.4' },
-    { cat: 'NH protocol', q: 'CPAP: name four patients who never get it.', a: 'Arrest or agonal breathing; unresponsive; vomiting or upper GI bleed; trauma-caused distress or suspected pneumothorax. Also: the mask does not fit.', src: 'NH PCP v9.3, 5.4' },
-    { cat: 'EMS history', q: 'What 1966 report is called the "white paper" that started modern EMS?', a: 'Accidental Death and Disability: The Neglected Disease of Modern Society, from the National Academy of Sciences and National Research Council.', src: 'EMS history' },
-    { cat: 'EMS history', q: 'The Star of Life has six branches. What do they stand for?', a: 'Detection, reporting, response, on-scene care, care in transit, and transfer to definitive care.', src: 'NHTSA' },
-    { cat: 'EMS history', q: 'Whose staff is in the middle of the Star of Life?', a: 'The Rod of Asclepius: one snake on a staff. The two-snake caduceus is a different symbol.', src: 'NHTSA' },
-    { cat: 'EMS history', q: 'What 1970s TV show made paramedics famous?', a: 'Emergency! (NBC, 1972 to 1977), with Squad 51.', src: 'EMS history' },
-    { cat: 'EMS history', q: 'Pittsburgh\'s Freedom House Ambulance Service (1967) is known for what?', a: 'It was one of the first paramedic services in the country, staffed by Black residents of the Hill District, and its training shaped the national paramedic curriculum.', src: 'EMS history' },
-    { cat: 'EMS history', q: 'What 1973 federal law paid for regional EMS systems?', a: 'The Emergency Medical Services Systems Act of 1973.', src: 'EMS history' },
-    { cat: 'EMS history', q: 'When is National EMS Week?', a: 'The third full week of May.', src: 'ACEP' },
-    { cat: 'JRMA', q: 'What year was the service founded, and under what name?', a: '1948, as Jaffrey VFW Memorial Ambulance.', src: 'JRMA agency profile' },
-    { cat: 'JRMA', q: 'What is the service called from 01/01/2027?', a: 'Jaffrey Memorial Ambulance.', src: 'JRMA agency profile' },
-    { cat: 'JRMA', q: 'How many calls did JRMA run in 2024?', a: '1,199: 769 in Jaffrey, 419 in Rindge, 11 elsewhere.', src: 'Ledger-Transcript, 2024-11-21' },
-    { cat: 'JRMA', q: 'What are the two ambulances?', a: '16A1: 2017 Ford E-450 by PL Custom. 16A2: 2024 Ford E-450 by Demers.', src: 'JRMA agency profile' },
-    { cat: 'JRMA', q: 'Which mountain is on the JRMA patch?', a: 'Mount Monadnock. Its green on the patch is the design system\'s in-service color.', src: 'JRMA design system' },
-    { cat: 'Trivia', q: 'How tall is Mount Monadnock?', a: '3,165 feet.', src: 'Trivia' },
-    { cat: 'Trivia', q: 'Why is AMBULANCE spelled backwards on the hood?', a: 'So a driver ahead reads it the right way in the rearview mirror.', src: 'Trivia' },
-    { cat: 'Trivia', q: 'Where does "stat" come from?', a: 'The Latin word statim, "immediately."', src: 'Trivia' },
-    { cat: 'Trivia', q: 'Where does the word "triage" come from?', a: 'The French verb trier, "to sort."', src: 'Trivia' },
-    { cat: 'Trivia', q: 'Why is "Mayday" the distress call?', a: 'It comes from the French m\'aider, "help me."', src: 'Trivia' },
-    { cat: 'Trivia', q: 'How many bones are in the adult human body?', a: '206.', src: 'Trivia' }
+    {"cat": "NH protocol", "q": "Intranasal naloxone for an adult: what dose, how often, and what is the endpoint?", "a": "1 mg each nostril (2 mg) or a 4 mg spray. Repeat every 5 to 10 minutes, maximum 10 mg. The endpoint is breathing, not waking up.", "src": "NH PCP v9.3, 2.17A"},
+    {"cat": "NH protocol", "q": "Aspirin for suspected ACS: dose, route, and when do you skip it?", "a": "324 mg chewed. Skip it if the patient took 324 mg in the last 30 minutes.", "src": "NH PCP v9.3, 3.0"},
+    {"cat": "NH protocol", "q": "Name the three nitroglycerin STOPs.", "a": "SBP 100 or less; a PDE5 inhibitor (sildenafil, vardenafil, tadalafil); IV epoprostenol (Flolan).", "src": "NH PCP v9.3, 3.0"},
+    {"cat": "NH protocol", "q": "When do you give oxygen, and what is the SpO2 target?", "a": "SpO2 94% or less (90% or less in COPD) or short of breath. Target 94 to 98%.", "src": "NH PCP v9.3, 1.0"},
+    {"cat": "NH protocol", "q": "What makes it anaphylaxis for epinephrine?", "a": "Allergen exposure plus any two of: breathing, poor perfusion, skin, GI. Epi 0.3 mg IM, anterolateral thigh; repeat once at 5 minutes.", "src": "NH PCP v9.3, 2.2A"},
+    {"cat": "NH protocol", "q": "Oral glucose: when, and how much?", "a": "BGL under 60 with altered mental status, and able to swallow: 15 to 30 g.", "src": "NH PCP v9.3, 2.11A"},
+    {"cat": "NH protocol", "q": "Stroke Alert: what are the two routes to calling one?", "a": "BGL over 60, not trauma, and a positive screen with last known well under 4.5 hours; or FAST-ED 4 or more with last known well under 24 hours.", "src": "NH PCP v9.3, 2.24"},
+    {"cat": "NH protocol", "q": "Minimum CPR time after arrival before considering termination?", "a": "20 minutes of high-quality CPR. No single factor decides; call Medical Control early.", "src": "NH PCP v9.3, 8.15"},
+    {"cat": "NH protocol", "q": "Hypothermic patient: how long is the pulse check?", "a": "A full 60 seconds. Rigor, lividity, and fixed pupils do not stop CPR in hypothermia.", "src": "NH PCP v9.3, 2.12; field card 10"},
+    {"cat": "NH protocol", "q": "Heat stroke: when do you stop active cooling?", "a": "At 102 F, or when shivering cannot be controlled.", "src": "NH PCP v9.3, 2.10"},
+    {"cat": "NH protocol", "q": "Sepsis screen: what are the criteria?", "a": "Suspected infection plus two or more: temp under 96.8 or over 101 F, HR over 90, RR over 20, SBP under 90, new or worse AMS, EtCO2 under 25.", "src": "NH PCP v9.3, 2.21A"},
+    {"cat": "NH protocol", "q": "What does APGAR stand for, and when do you score it?", "a": "Appearance, Pulse, Grimace, Activity, Respiration. At 1 and 5 minutes.", "src": "NH PCP v9.3, 2.6; field card 16"},
+    {"cat": "NH protocol", "q": "Newborn not breathing well or HR under 100: what gas and what rate?", "a": "BVM on room air at 40 to 60 breaths a minute. Reassess the heart rate after 30 seconds.", "src": "NH PCP v9.3, 2.15"},
+    {"cat": "NH protocol", "q": "Newborn compressions: when, and at what ratio?", "a": "HR under 60 after corrected ventilations. 3:1, 90 compressions and 30 breaths a minute, two-thumb technique.", "src": "NH PCP v9.3, 2.15"},
+    {"cat": "NH protocol", "q": "DUMBELLS: what does it stand for?", "a": "Diarrhea, Urination, Miosis, Bronchorrhea, Bradycardia, Emesis, Lacrimation, Salivation.", "src": "Field card 17; NH PCP v9.3, 2.14A"},
+    {"cat": "NH protocol", "q": "Pediatric AED pads: which patients get them?", "a": "Under 8 years old. If none, use adult pads that do not overlap.", "src": "NH PCP v9.3, 3.2P"},
+    {"cat": "NH protocol", "q": "Where does a tourniquet go, and when?", "a": "2 to 3 inches above the wound; time it. Do not wait for hypotension.", "src": "NH PCP v9.3, 4.4"},
+    {"cat": "NH protocol", "q": "Trauma red criterion: what systolic BP counts for a patient 65 or older?", "a": "Under 110. Under 65 years old it is under 90.", "src": "NH PCP v9.3, 8.17"},
+    {"cat": "NH protocol", "q": "Which NH Patient Care Protocols are in effect, and since when?", "a": "Version 9.3, effective 11/07/2025.", "src": "Field cards v1.4"},
+    {"cat": "NH protocol", "q": "CPAP: name four patients who never get it.", "a": "Arrest or agonal breathing; unresponsive; vomiting or upper GI bleed; trauma-caused distress or suspected pneumothorax. Also: the mask does not fit.", "src": "NH PCP v9.3, 5.4"},
+    {"cat": "EMS history", "q": "What 1966 report is called the \"white paper\" that started modern EMS?", "a": "Accidental Death and Disability: The Neglected Disease of Modern Society, from the National Academy of Sciences and National Research Council.", "src": "EMS history"},
+    {"cat": "EMS history", "q": "The Star of Life has six branches. What do they stand for?", "a": "Detection, reporting, response, on-scene care, care in transit, and transfer to definitive care.", "src": "NHTSA"},
+    {"cat": "EMS history", "q": "Whose staff is in the middle of the Star of Life?", "a": "The Rod of Asclepius: one snake on a staff. The two-snake caduceus is a different symbol.", "src": "NHTSA"},
+    {"cat": "EMS history", "q": "What 1970s TV show made paramedics famous?", "a": "Emergency! (NBC, 1972 to 1977), with Squad 51.", "src": "EMS history"},
+    {"cat": "EMS history", "q": "Pittsburgh's Freedom House Ambulance Service (1967) is known for what?", "a": "It was one of the first paramedic services in the country, staffed by Black residents of the Hill District, and its training shaped the national paramedic curriculum.", "src": "EMS history"},
+    {"cat": "EMS history", "q": "What 1973 federal law paid for regional EMS systems?", "a": "The Emergency Medical Services Systems Act of 1973.", "src": "EMS history"},
+    {"cat": "EMS history", "q": "When is National EMS Week?", "a": "The third full week of May.", "src": "ACEP"},
+    {"cat": "JRMA", "q": "What year was the service founded, and under what name?", "a": "1948, as Jaffrey VFW Memorial Ambulance.", "src": "JRMA agency profile"},
+    {"cat": "JRMA", "q": "What is the service called from 01/01/2027?", "a": "Jaffrey Memorial Ambulance.", "src": "JRMA agency profile"},
+    {"cat": "JRMA", "q": "How many calls did JRMA run in 2024?", "a": "1,199: 769 in Jaffrey, 419 in Rindge, 11 elsewhere.", "src": "Ledger-Transcript, 2024-11-21"},
+    {"cat": "JRMA", "q": "What are the two ambulances?", "a": "16A1: 2017 Ford E-450 by PL Custom. 16A2: 2024 Ford E-450 by Demers.", "src": "JRMA agency profile"},
+    {"cat": "JRMA", "q": "Which mountain is on the JRMA patch?", "a": "Mount Monadnock. Its green on the patch is the design system's in-service color.", "src": "JRMA design system"},
+    {"cat": "Trivia", "q": "How tall is Mount Monadnock?", "a": "3,165 feet.", "src": "Trivia"},
+    {"cat": "Trivia", "q": "Why is AMBULANCE spelled backwards on the hood?", "a": "So a driver ahead reads it the right way in the rearview mirror.", "src": "Trivia"},
+    {"cat": "Trivia", "q": "Where does \"stat\" come from?", "a": "The Latin word statim, \"immediately.\"", "src": "Trivia"},
+    {"cat": "Trivia", "q": "Where does the word \"triage\" come from?", "a": "The French verb trier, \"to sort.\"", "src": "Trivia"},
+    {"cat": "Trivia", "q": "Why is \"Mayday\" the distress call?", "a": "It comes from the French m'aider, \"help me.\"", "src": "Trivia"},
+    {"cat": "Trivia", "q": "How many bones are in the adult human body?", "a": "206.", "src": "Trivia"},
+    {"cat": "JRMA", "q": "How often are the trucks checked at JRMA?", "a": "Both trucks, every morning and at 1800", "src": "JRMA precepting lesson 1"},
+    {"cat": "JRMA", "q": "What do you need before you use the LifePak 35 on a patient for the first time?", "a": "A sign-off by the Captain or a paramedic", "src": "JRMA precepting lesson 1"},
+    {"cat": "NH protocol", "q": "Blood splashes onto your skin during a call. What does the infection control policy say to do right away?", "a": "Immediately flush or wash the area, at minimum with warm water and soap", "src": "NH PCP v9.3, 8.9"},
+    {"cat": "NH protocol", "q": "A patient with a cough and fever needs oxygen by mask. Where does the surgical mask go?", "a": "Over the oxygen mask, to block pathogen release", "src": "NH PCP v9.3, 8.9"},
+    {"cat": "JRMA", "q": "You just used a needle. What is the rule?", "a": "Never recap it; use the safety feature and drop it into a sharps container", "src": "JRMA precepting lesson 1"},
+    {"cat": "NH protocol", "q": "Which pediatric patients must be restrained in a safety seat or harness during ambulance transport?", "a": "Any child who fits on a length-based resuscitation tape", "src": "NH PCP v9.3, 8.12"},
+    {"cat": "NH protocol", "q": "How do you secure a convertible car seat on the ambulance cot?", "a": "Facing the foot-end, backrest raised to meet the seat back", "src": "NH PCP v9.3, 8.12"},
+    {"cat": "NH protocol", "q": "An infant who must lie flat is transported in a car bed. How is the car bed positioned?", "a": "Perpendicular to the cot, head toward the center of the compartment", "src": "NH PCP v9.3, 8.12"},
+    {"cat": "NH protocol", "q": "After a field delivery, the newborn is not stable. What is best practice for transporting mother and newborn?", "a": "Request two ambulances, one for each patient", "src": "NH PCP v9.3, 8.12"},
+    {"cat": "NH protocol", "q": "After a minor crash, which finding rules out using the child's own safety seat in the ambulance?", "a": "The vehicle's air bags deployed", "src": "NH PCP v9.3, 8.12"},
+    {"cat": "NH protocol", "q": "A 20 kg child has anaphylaxis. Which epinephrine autoinjector dose do the EMT orders give?", "a": "EpiPen Jr 0.15 mg IM", "src": "NH PCP v9.3, 2.2P"},
+    {"cat": "NH protocol", "q": "An adult in anaphylaxis is wheezing after albuterol 2.5 mg by nebulizer. How may the EMT repeat it?", "a": "Every 5 minutes, 4 doses total", "src": "NH PCP v9.3, 2.2A"},
+    {"cat": "NH protocol", "q": "Per the caution box, how should diphenhydramine relate to epinephrine in anaphylaxis?", "a": "Do not delay epinephrine to give diphenhydramine", "src": "NH PCP v9.3, 2.2A"},
+    {"cat": "NH protocol", "q": "A patient taking an ACE inhibitor has deep swelling of the lips, mouth, and upper airway. What does the angioedema box say to prioritize?", "a": "Airway management", "src": "NH PCP v9.3, 2.2A"},
+    {"cat": "NH protocol", "q": "Ready, Check & Inject skill: you draw up epinephrine 1 mg/mL for an adult in anaphylaxis. What do you give, and where?", "a": "0.3 mg (0.3 mL) IM, anterolateral thigh preferred", "src": "NH PCP v9.3, 2.2A"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "Anaphylaxis signs persist after epinephrine. How often may an AEMT repeat epinephrine?", "a": "Every 5 minutes until signs and symptoms resolve", "src": "NH PCP v9.3, 2.2A"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "A child in anaphylaxis shows signs of shock. What does the AEMT order add?", "a": "Fluid per Shock, Non-Traumatic Protocol 2.22", "src": "NH PCP v9.3, 2.2P"},
+    {"cat": "NH protocol · Paramedic", "q": "Adult anaphylaxis is refractory to 3 or more IM epinephrine doses. What push-dose epinephrine does the paramedic give?", "a": "10 to 20 mcg (1 to 2 mL of 10 mcg/mL) every 2 minutes", "src": "NH PCP v9.3, 2.2A"},
+    {"cat": "NH protocol · Paramedic", "q": "After epinephrine, a paramedic considers diphenhydramine for a child with anaphylaxis. What dose do the orders give?", "a": "1 mg/kg IV/IM/PO, maximum 50 mg", "src": "NH PCP v9.3, 2.2P"},
+    {"cat": "NH protocol", "q": "Which patient with suspected ACS should receive oxygen under the EMT orders?", "a": "One with dyspnea, SpO2 under 94%, or signs of heart failure", "src": "NH PCP v9.3, 3.0"},
+    {"cat": "NH protocol", "q": "When may an EMT help a chest pain patient take their own nitroglycerin?", "a": "Every 3 to 5 minutes while SBP stays over 100, 3 doses total", "src": "NH PCP v9.3, 3.0"},
+    {"cat": "NH protocol", "q": "Which history is a reason to withhold aspirin from a patient with suspected ACS?", "a": "Active gastrointestinal bleeding", "src": "NH PCP v9.3, 3.0"},
+    {"cat": "NH protocol", "q": "Which patients does the ACS pearl say may present with symptoms other than chest pain, such as weakness or nausea?", "a": "Especially women and the elderly", "src": "NH PCP v9.3, 3.0"},
+    {"cat": "NH protocol", "q": "12-lead skill: where is lead V4 placed?", "a": "5th intercostal space, midclavicular line", "src": "NH PCP v9.3, 6.0"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "Before an AEMT gives nitroglycerin 0.4 mg SL for suspected ACS, what must be in place?", "a": "An established IV line", "src": "NH PCP v9.3, 3.0"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "When an AEMT establishes an IV for suspected ACS, which site should be avoided if feasible?", "a": "The right wrist", "src": "NH PCP v9.3, 3.0"},
+    {"cat": "NH protocol · Paramedic", "q": "A paramedic started IV nitroglycerin at 10 mcg/min for ACS. How is it increased while symptoms persist?", "a": "By 10 mcg/min every 5 minutes if SBP stays over 100", "src": "NH PCP v9.3, 3.0"},
+    {"cat": "NH protocol · Paramedic", "q": "For ACS chest pain, what morphine dosing may the paramedic give?", "a": "2 to 5 mg IV/IM every 5 minutes, maximum 15 mg", "src": "NH PCP v9.3, 3.0"},
+    {"cat": "NH protocol", "q": "Nebulizer medications: which drugs and doses make up one DuoNeb treatment?", "a": "Ipratropium bromide 0.5 mg and albuterol 2.5 mg", "src": "NH PCP v9.3, 2.3A"},
+    {"cat": "NH protocol", "q": "A patient with asthma is working hard to breathe, but you hear almost no air movement (a \"silent chest\"). What may this indicate?", "a": "Severe bronchospasm and impending respiratory failure", "src": "NH PCP v9.3, 2.3A"},
+    {"cat": "NH protocol", "q": "A child 2 years old or younger has increased work of breathing and a runny nose. What nasal suctioning do the EMT orders allow?", "a": "Saline drops and bulb syringe, no more than 2 attempts", "src": "NH PCP v9.3, 2.3P"},
+    {"cat": "NH protocol", "q": "CPAP skill: after placing the mask, what PEEP range does the CPAP procedure allow?", "a": "5 to 15 cmH2O, adjusted to effect", "src": "NH PCP v9.3, 5.4"},
+    {"cat": "NH protocol", "q": "During EtCO2 monitoring, the waveform suddenly disappears. What may this indicate?", "a": "Airway failure, apnea, or cardiac arrest", "src": "NH PCP v9.3, 6.1"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "Severe asthma in an adult is not responding to treatment. What may the AEMT give?", "a": "Epinephrine 0.3 mg IM, autoinjector preferred", "src": "NH PCP v9.3, 2.3A"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "A child with croup has stridor at rest. Which nebulized epinephrine dose may the AEMT give?", "a": "Epinephrine (1 mg/mL) 3 mg (3 mL) in 3 mL 0.9% NaCl", "src": "NH PCP v9.3, 2.3P"},
+    {"cat": "NH protocol · Paramedic", "q": "An adult with asthma is not responding to treatment. What magnesium sulfate dose may the paramedic give?", "a": "2 grams in 100 mL NS IV over 10 minutes", "src": "NH PCP v9.3, 2.3A"},
+    {"cat": "NH protocol · Paramedic", "q": "An adult cannot tolerate CPAP because of anxiety. Which IV midazolam dose may the paramedic give?", "a": "2.5 mg IV, may repeat once in 5 minutes", "src": "NH PCP v9.3, 5.4"},
+    {"cat": "NH protocol", "q": "How do the EMT orders say to position a patient with CHF and pulmonary edema?", "a": "Semi-sitting or full sitting position", "src": "NH PCP v9.3, 3.3"},
+    {"cat": "NH protocol", "q": "When may an EMT help a CHF patient take their own nitroglycerin?", "a": "Every 5 minutes while symptoms persist and SBP is over 140", "src": "NH PCP v9.3, 3.3"},
+    {"cat": "NH protocol", "q": "A CHF patient took their own nitroglycerin with no relief. What does the pearl say to consider?", "a": "Loss of potency due to the medication's age", "src": "NH PCP v9.3, 3.3"},
+    {"cat": "NH protocol", "q": "With no commercial CPAP device, you deliver CPAP with a BVM and PEEP valve. How is the bag handled?", "a": "Keep a mask seal and do not compress the bag", "src": "NH PCP v9.3, 5.4"},
+    {"cat": "NH protocol", "q": "Capnography on a patient in respiratory distress shows EtCO2 well above normal. What may this indicate?", "a": "Hypoventilation or CO2 retention", "src": "NH PCP v9.3, 6.1"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "A patient with known CHF has SBP 180 mmHg. Which SL nitroglycerin dose do the AEMT orders give?", "a": "0.8 mg SL (2 tabs/sprays)", "src": "NH PCP v9.3, 3.3"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "The AEMT is repeating SL nitroglycerin for CHF every 5 minutes. When do repeat doses stop?", "a": "At symptom improvement or SBP of 120 to 140 mmHg", "src": "NH PCP v9.3, 3.3"},
+    {"cat": "NH protocol · Paramedic", "q": "A CHF patient has SBP 210 mmHg. At what rate does the paramedic start IV nitroglycerin?", "a": "200 micrograms/minute", "src": "NH PCP v9.3, 3.3"},
+    {"cat": "NH protocol · Paramedic", "q": "After starting a CHF nitroglycerin infusion, how does the paramedic titrate it?", "a": "5 to 10 mcg/min every 3 to 5 minutes", "src": "NH PCP v9.3, 3.3"},
+    {"cat": "NH protocol", "q": "Using a prefilled syringe and atomizer, how does the EMT give naloxone to an adult with opioid hypoventilation?", "a": "1 mg (1 mL) per nostril, 2 mg total", "src": "NH PCP v9.3, 2.17A"},
+    {"cat": "NH protocol", "q": "Per the opioid overdose pearls, how long may the clinical reversal effect of naloxone last?", "a": "It may end within an hour", "src": "NH PCP v9.3, 2.17A"},
+    {"cat": "NH protocol", "q": "Your agency stocks leave-behind naloxone kits. Which rule applies to them?", "a": "Keep them separate from the naloxone used for patient care", "src": "NH PCP v9.3, 2.17A"},
+    {"cat": "NH protocol", "q": "What risk do the poisoning notes give for rough handling of a patient with significant solvent exposure, such as gasoline or glue?", "a": "Arrhythmia and subsequent cardiac arrest", "src": "NH PCP v9.3, 2.19P"},
+    {"cat": "NH protocol", "q": "After a toxic inhalation, which monitoring reading do the poisoning pearls warn may be inaccurate?", "a": "Pulse oximetry (SpO2)", "src": "NH PCP v9.3, 2.19A"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "What IV naloxone dosing may the AEMT give an adult with opioid respiratory depression?", "a": "0.4 to 2.0 mg IV every 2 to 3 minutes, maximum 10 mg", "src": "NH PCP v9.3, 2.17A"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "A child has opioid respiratory depression. What weight-based IN/IV naloxone dose may the AEMT give?", "a": "0.1 mg/kg IN/IV", "src": "NH PCP v9.3, 2.17P"},
+    {"cat": "NH protocol · Paramedic", "q": "A tricyclic overdose patient has tachycardia and a QRS over 100 milliseconds. What does the paramedic give?", "a": "Sodium bicarbonate 1 mEq/kg IV/IO over 5 minutes", "src": "NH PCP v9.3, 2.19A"},
+    {"cat": "NH protocol · Paramedic", "q": "An adult with suspected stimulant (sympathomimetic) toxicity is agitated. Which lorazepam dose may the paramedic give?", "a": "1 mg IV, may repeat once in 5 minutes", "src": "NH PCP v9.3, 2.19A"},
+    {"cat": "NH protocol", "q": "A patient with a suspected infection is screened for sepsis. Which pair of findings meets 2 sepsis criteria?", "a": "Heart rate 104 bpm and respiratory rate 24", "src": "NH PCP v9.3, 2.21A"},
+    {"cat": "NH protocol", "q": "An adult patient is nauseated. What nausea treatment is in the EMT standing orders?", "a": "Inhaled vapor from an isopropyl alcohol wipe, 3 times every 15 minutes as tolerated", "src": "NH PCP v9.3, 2.13"},
+    {"cat": "NH protocol", "q": "For a child with suspected sepsis, how do the EMT orders handle oxygen?", "a": "Give oxygen and continue it regardless of SpO2", "src": "NH PCP v9.3, 2.21P"},
+    {"cat": "NH protocol", "q": "An adult has a temperature of 102°F and has taken no acetaminophen in 4 hours. What may the EMT give?", "a": "Acetaminophen 500 to 1,000 mg by mouth", "src": "NH PCP v9.3, 2.7A"},
+    {"cat": "NH protocol", "q": "Under the pediatric fever orders, ibuprofen is contraindicated below what age?", "a": "Under 6 months of age", "src": "NH PCP v9.3, 2.7P"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "How much IV fluid may the AEMT give an adult with sepsis, and to what target?", "a": "Up to 30 mL/kg to keep MAP over 65 mmHg", "src": "NH PCP v9.3, 2.21A"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "What ondansetron dose may the AEMT give an adult with nausea and vomiting?", "a": "4 mg PO/IV/IM", "src": "NH PCP v9.3, 2.13"},
+    {"cat": "NH protocol · Paramedic", "q": "Septic shock persists after IV fluids. Which vasopressor is preferred, and at what starting dose?", "a": "Norepinephrine, starting 1 to 15 mcg/min", "src": "NH PCP v9.3, 2.21A"},
+    {"cat": "NH protocol · Paramedic", "q": "How should the paramedic give prochlorperazine or metoclopramide to reduce dystonic reactions?", "a": "Slowly, over 1 to 2 minutes", "src": "NH PCP v9.3, 2.13"},
+    {"cat": "NH protocol", "q": "A tourniquet is on, but the leg is still bleeding. What is your next step?", "a": "Apply a second tourniquet side-by-side with the first", "src": "NH PCP v9.3, 4.4"},
+    {"cat": "NH protocol", "q": "How should you keep an amputated part cold for transport?", "a": "Sealed in a water-tight container set on ice", "src": "NH PCP v9.3, 4.4"},
+    {"cat": "NH protocol", "q": "Which fracture does the protocol name for traction splinting?", "a": "Isolated mid-shaft femur fracture", "src": "NH PCP v9.3, 4.5"},
+    {"cat": "NH protocol", "q": "A stable, cooperative patient needing spinal motion restriction arrives on a long backboard. What is done after moving them to the stretcher?", "a": "Remove the backboard from under the patient", "src": "NH PCP v9.3, 4.7"},
+    {"cat": "NH protocol", "q": "What acetaminophen dose may an EMT give an adult for pain, if not contraindicated?", "a": "325 to 1000 mg PO, no repeat", "src": "NH PCP v9.3, 2.18A"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "An adult has an open lower-leg fracture. Which antibiotic order may an AEMT give, if available?", "a": "Ceftriaxone 1 gram IV/IM", "src": "NH PCP v9.3, 4.5"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "Which adult pain patient should not receive nitrous oxide?", "a": "Blunt chest trauma with rib pain", "src": "NH PCP v9.3, 2.18A"},
+    {"cat": "NH protocol · Paramedic", "q": "An adult trauma patient meets TXA criteria. How is TXA given?", "a": "1 gram in 50 to 100 ml NaCl over about 10 minutes", "src": "NH PCP v9.3, 4.4"},
+    {"cat": "NH protocol · Paramedic", "q": "Which adult pain patient should not receive ketamine?", "a": "Suspected aortic dissection", "src": "NH PCP v9.3, 2.18A"},
+    {"cat": "NH protocol", "q": "You are doing the arm drift part of the Prehospital Stroke Screen. What do you ask the patient to do?", "a": "Close eyes and hold both arms extended for 10 seconds", "src": "NH PCP v9.3, 2.24"},
+    {"cat": "NH protocol", "q": "A patient wakes up with stroke symptoms. How do you set the time last known well (TLKW)?", "a": "Last time known at baseline; ask if they got up overnight", "src": "NH PCP v9.3, 2.24"},
+    {"cat": "NH protocol", "q": "With a positive stroke screen, what time last known well (TLKW) limit meets Stroke Alert criteria without the FAST-ED score?", "a": "Less than 4.5 hours", "src": "NH PCP v9.3, 2.24"},
+    {"cat": "NH protocol", "q": "Sudden dizziness, vomiting, and loss of balance, but the stroke screen is negative. What does the protocol advise?", "a": "Suspect posterior stroke; contact Medical Direction if still concerned", "src": "NH PCP v9.3, 2.24"},
+    {"cat": "NH protocol", "q": "How should you view syncope that happens during exercise?", "a": "Often an ominous cardiac cause; needs ED evaluation", "src": "NH PCP v9.3, 2.25"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "What IV access and fluid does the stroke protocol call for?", "a": "18 gauge, right AC preferred, 250 ml IV fluid", "src": "NH PCP v9.3, 2.24"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "After a faint, your patient is pale and hypotensive. Which AEMT standing order applies?", "a": "Prevent and treat shock per protocol 2.22 or 4.6", "src": "NH PCP v9.3, 2.25"},
+    {"cat": "NH protocol · Paramedic", "q": "Which ECG pattern suggests Brugada syndrome as a cause of syncope?", "a": "Incomplete RBBB pattern in V1/V2 with ST elevation", "src": "NH PCP v9.3, 2.25"},
+    {"cat": "NH protocol · Paramedic", "q": "When should the paramedic especially consider dysrhythmias and genetic or structural heart causes of syncope?", "a": "When it does not suggest typical vasovagal syncope", "src": "NH PCP v9.3, 2.25"},
+    {"cat": "NH protocol", "q": "An alert hypoglycemic adult can swallow and protect the airway. What oral glucose dose do you give?", "a": "15 to 30 grams of glucose gel or equivalent", "src": "NH PCP v9.3, 2.11A"},
+    {"cat": "NH protocol", "q": "A hypoglycemic adult is too altered to swallow safely. What may the EMT give?", "a": "Intranasal glucagon or glucagon auto-injector, if available", "src": "NH PCP v9.3, 2.11A"},
+    {"cat": "NH protocol", "q": "When should an EMT remove a hypoglycemic patient's insulin pump infusion set?", "a": "Altered, cannot take oral glucose, no glucagon, and no ALS", "src": "NH PCP v9.3, 2.11A"},
+    {"cat": "NH protocol", "q": "Which is a listed oral glucose equivalent?", "a": "4 oz of fruit juice", "src": "NH PCP v9.3, 2.11A"},
+    {"cat": "NH protocol", "q": "Which finding points to DKA rather than HHNS?", "a": "Fruity breath odor and Kussmaul respirations", "src": "NH PCP v9.3, 2.8"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "A hypoglycemic adult is altered and you cannot start an IV. What is the AEMT order?", "a": "Glucagon 1 mg IM; recheck glucose in 15 minutes", "src": "NH PCP v9.3, 2.11A"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "An adult with hyperglycemia and signs of DKA needs IV fluid. What bolus may the AEMT give?", "a": "1000 ml IV; may repeat 500 ml once", "src": "NH PCP v9.3, 2.8"},
+    {"cat": "NH protocol", "q": "The cord is around the baby's neck and will not slip over the head after several tries. What next?", "a": "Clamp and cut the cord between the clamps", "src": "NH PCP v9.3, 2.6"},
+    {"cat": "NH protocol", "q": "A newborn with meconium-stained fluid is breathing well with no obstruction. What about suctioning?", "a": "Do not suction routinely; suction only for depression or obstruction", "src": "NH PCP v9.3, 2.6"},
+    {"cat": "NH protocol", "q": "A newborn's heart rate stays under 60 after you correct ventilations. How do you perform CPR?", "a": "3:1 ratio, 90 compressions and 30 breaths per minute", "src": "NH PCP v9.3, 2.15"},
+    {"cat": "NH protocol", "q": "You see a prolapsed umbilical cord. Which action does the protocol direct?", "a": "Lift the presenting part off the cord with a gloved hand", "src": "NH PCP v9.3, 2.16"},
+    {"cat": "NH protocol", "q": "A pregnant patient at 24 weeks is in cardiac arrest. What should you add to CPR?", "a": "Left lateral uterine displacement with the patient supine", "src": "NH PCP v9.3, 2.16"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "A mother delivers the first of twins, and the cord is clamped and cut. When may the AEMT give oxytocin 10 Units IM?", "a": "Only after all babies are delivered", "src": "NH PCP v9.3, 2.6"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "A patient in preterm labor needs IV fluid. What does the AEMT give?", "a": "20 mL/kg IV fluid, may repeat once", "src": "NH PCP v9.3, 2.16"},
+    {"cat": "NH protocol · Paramedic", "q": "A third-trimester patient is seizing. What magnesium sulfate dose does the paramedic give?", "a": "4 grams IV in 100 mL over 10 minutes", "src": "NH PCP v9.3, 2.16"},
+    {"cat": "NH protocol · Paramedic", "q": "A newborn's heart rate fails to improve with chest compressions. What IV epinephrine dose applies?", "a": "0.01 to 0.03 mg/kg of 0.1 mg/ml (0.1 to 0.3 ml/kg)", "src": "NH PCP v9.3, 2.15"},
+    {"cat": "NH protocol", "q": "Which active cooling method does the hyperthermia protocol prefer?", "a": "Misting the skin with tepid water while fanning", "src": "NH PCP v9.3, 2.10"},
+    {"cat": "NH protocol", "q": "Which patient should not be treated under the hyperthermia protocol?", "a": "Fever from a likely infectious illness", "src": "NH PCP v9.3, 2.10"},
+    {"cat": "NH protocol", "q": "A hypothermic patient in arrest has apparent rigor, dependent lividity, and fixed pupils. What does the protocol direct?", "a": "Start CPR; these are not contraindications in hypothermia", "src": "NH PCP v9.3, 2.12"},
+    {"cat": "NH protocol", "q": "A hypothermic patient in cardiac arrest has no ROSC. When may termination of resuscitation be considered?", "a": "Only after core temperature is above 32 C (90 F)", "src": "NH PCP v9.3, 2.12"},
+    {"cat": "NH protocol", "q": "A mildly hypothermic hiker faces a delayed trip to a warm place. What activity limit applies?", "a": "No standing or walking for 20 minutes", "src": "NH PCP v9.3, 2.12"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "An adult with exertional heat illness looks dehydrated but has normal vital signs. What may the AEMT give?", "a": "500 ml IV fluid bolus", "src": "NH PCP v9.3, 2.10"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "A hypothermic adult in cardiac arrest has a core temperature below 32 C (89.6 F). How should epinephrine dosing change?", "a": "Consider limiting to 3 doses, 6 to 10 minutes apart", "src": "NH PCP v9.3, 2.12"},
+    {"cat": "NH protocol · Paramedic", "q": "An adult develops uncontrolled shivering during active cooling. What IV midazolam dose may the paramedic give?", "a": "2.5 mg IV, may repeat once in 5 minutes", "src": "NH PCP v9.3, 2.10"},
+    {"cat": "NH protocol · Paramedic", "q": "A child shivers uncontrollably during active cooling. What IV lorazepam dose may the paramedic give?", "a": "0.05 mg/kg IV (maximum 1 mg), may repeat once", "src": "NH PCP v9.3, 2.10"},
+    {"cat": "NH protocol", "q": "In the SAFER model, what does the final R step require before EMS clears the scene?", "a": "Leave the patient with a responsible person or transport", "src": "NH PCP v9.3, 2.4"},
+    {"cat": "NH protocol", "q": "You have placed a patient in the truck's restraints for transport. How often do you check extremity circulation?", "a": "Every 15 minutes", "src": "NH PCP v9.3, 6.5"},
+    {"cat": "NH protocol", "q": "You suspect elder abuse and tell the ED nurse at handoff. Is your reporting duty met?", "a": "No; you must still report it yourself, immediately", "src": "NH PCP v9.3, 8.18"},
+    {"cat": "NH protocol", "q": "A sexual assault patient needs to use the restroom before transport. What should you advise?", "a": "Go if needed, but do not wipe", "src": "NH PCP v9.3, 8.18"},
+    {"cat": "NH protocol", "q": "Police ask you to remove a Taser probe embedded in a man's neck. What does the policy direct?", "a": "Transport to the hospital for evaluation and removal", "src": "NH PCP v9.3, 8.13"},
+    {"cat": "NH protocol · Paramedic", "q": "An agitated patient is being held prone by police. What must happen before the paramedic gives chemical sedation?", "a": "Reposition so breathing is not restricted", "src": "NH PCP v9.3, 6.5"},
+    {"cat": "NH protocol · Paramedic", "q": "An adult is an immediate danger to self and others. What is the IM ketamine dose?", "a": "4 mg/kg IM, rounded up to nearest 50 mg, max 500 mg", "src": "NH PCP v9.3, 6.5"},
+    {"cat": "NH protocol", "q": "Pediatric AED pads are not available for a 4-year-old in cardiac arrest. What does the protocol allow?", "a": "Use adult AED pads, provided the pads do not overlap", "src": "NH PCP v9.3, 3.2P"},
+    {"cat": "NH protocol", "q": "Two providers are doing CPR on a child without an advanced airway. What compression-to-ventilation ratio is used?", "a": "15:2", "src": "NH PCP v9.3, 3.2P"},
+    {"cat": "NH protocol", "q": "An advanced airway is placed during pediatric cardiac arrest. How are ventilations given?", "a": "One breath every 2 to 3 seconds during continuous compressions", "src": "NH PCP v9.3, 3.2P"},
+    {"cat": "NH protocol", "q": "You are bagging an adult in cardiac arrest during the first 4 cycles. How do you give BVM breaths?", "a": "1 breath every 10 compressions without stopping compressions", "src": "NH PCP v9.3, 3.2A"},
+    {"cat": "NH protocol", "q": "When positioning the head for bag-valve-mask ventilation, what alignment gives a good seal?", "a": "Sternal notch and ear at the same level", "src": "NH PCP v9.3, 5.0"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "In adult cardiac arrest, when does the AEMT first consider epinephrine 1 mg IV (0.1 mg/mL), and how often is it repeated?", "a": "After the first 2-minute cycle, then every other cycle", "src": "NH PCP v9.3, 3.2A"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "After establishing IV/IO access in pediatric cardiac arrest, what fluid bolus does the AEMT give?", "a": "10 to 20 ml/kg", "src": "NH PCP v9.3, 3.2P"},
+    {"cat": "NH protocol · Paramedic", "q": "A child in cardiac arrest is in ventricular fibrillation. What energy does the paramedic use for the first defibrillation?", "a": "2 J/kg", "src": "NH PCP v9.3, 3.2P"},
+    {"cat": "NH protocol · Paramedic", "q": "An adult has impending respiratory failure with an intact gag reflex. Which advanced airway should the paramedic consider?", "a": "Nasotracheal intubation (5.9)", "src": "NH PCP v9.3, 5.1A"},
+    {"cat": "NH protocol", "q": "Which patient history is a listed contraindication to giving acetaminophen for pain?", "a": "Severe hepatic impairment or active liver disease", "src": "NH PCP v9.3, 2.18A"},
+    {"cat": "NH protocol", "q": "Poison Control recommends activated charcoal for an adult ingestion. What dose and route does the EMT give?", "a": "25 to 50 grams by mouth", "src": "NH PCP v9.3, 2.19A"},
+    {"cat": "NH protocol", "q": "An adult with asthma has an albuterol metered-dose inhaler. What dose may the EMT give?", "a": "4 to 6 puffs, with spacer if available, repeat every 5 minutes", "src": "NH PCP v9.3, 2.3A"},
+    {"cat": "NH protocol", "q": "Using epinephrine 1 mg/mL for adult anaphylaxis, what volume gives the 0.3 mg IM dose?", "a": "0.3 mL", "src": "NH PCP v9.3, 2.2A"},
+    {"cat": "NH protocol", "q": "After intranasal naloxone, how often may the EMT repeat the dose, and what is the maximum?", "a": "Every 5 to 10 minutes, maximum 10 mg", "src": "NH PCP v9.3, 2.17A"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "An AEMT gives IV dextrose for a hypoglycemic emergency. Which concentration and method is preferred?", "a": "Dextrose 10% by premixed infusion bag", "src": "NH PCP v9.3, 2.11A"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "For adult pain, acetaminophen was not given by mouth. What IV dose may the AEMT give?", "a": "1000 mg IV over about 10 minutes", "src": "NH PCP v9.3, 2.18A"},
+    {"cat": "NH protocol · Paramedic", "q": "In the adult fever protocol, which acetaminophen route is limited to paramedics?", "a": "Rectal", "src": "NH PCP v9.3, 2.7A"},
+    {"cat": "NH protocol · Paramedic", "q": "Which steroid dose may a paramedic consider for an adult asthma or COPD exacerbation?", "a": "Methylprednisolone 125 mg IV/IM", "src": "NH PCP v9.3, 2.3A"},
+    {"cat": "Wellness", "q": "A coworker says they are thinking about suicide. Which number reaches the Suicide and Crisis Lifeline by call or text, 24/7?", "a": "988", "src": "JRMA precepting lesson 17"},
+    {"cat": "Wellness", "q": "How much sleep a night do adults aged 18 to 60 need?", "a": "7 or more hours", "src": "JRMA precepting lesson 17"},
+    {"cat": "Wellness", "q": "The 2018 national EMS fatigue guideline recommends shifts of what length?", "a": "Shorter than 24 hours", "src": "JRMA precepting lesson 17"},
+    {"cat": "Wellness", "q": "What does the 2018 national EMS fatigue guideline say about napping on duty?", "a": "Crews should have the chance to nap on duty", "src": "JRMA precepting lesson 17"},
+    {"cat": "Wellness", "q": "Which fatigue countermeasure does the 2018 national EMS fatigue guideline recommend crews have access to?", "a": "Caffeine", "src": "JRMA precepting lesson 17"},
+    {"cat": "NH protocol", "q": "A child in anaphylaxis has received epinephrine and is still wheezing. What may the EMT give for the wheezing?", "a": "Albuterol 2.5 mg nebulized or 4 puffs by MDI", "src": "NH PCP v9.3, 2.2P"},
+    {"cat": "NH protocol", "q": "A 4-month-old has a runny nose, low-grade fever, tachypnea, and wheezes with crackles. Which condition do the pearls describe?", "a": "Bronchiolitis", "src": "NH PCP v9.3, 2.3P"},
+    {"cat": "NH protocol", "q": "A child with severe croup has stridor at rest. What do the pearls say about procedures?", "a": "Avoid procedures that will distress the child", "src": "NH PCP v9.3, 2.3P"},
+    {"cat": "NH protocol", "q": "A child with stridor, severe sore throat, and high fever may have epiglottitis. What do the pearls direct?", "a": "Transport upright and limit assessment and interventions", "src": "NH PCP v9.3, 2.3P"},
+    {"cat": "NH protocol", "q": "Skills check: after placing a supraglottic airway, which auscultation findings help confirm placement?", "a": "Equal breath sounds over the chest, no epigastric sounds", "src": "NH PCP v9.3, 5.12"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "For croup with stridor at rest, what nebulized racemic epinephrine dose may the AEMT give?", "a": "0.5 ml of 2.25% solution in 2.5 ml 0.9% NaCl", "src": "NH PCP v9.3, 2.3P"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "Between pediatric sepsis fluid boluses, which lung finding is a sign of fluid overload?", "a": "Rales", "src": "NH PCP v9.3, 2.21P"},
+    {"cat": "NH protocol · Paramedic", "q": "A wheezing infant under 2 years (bronchiolitis) is not improving after suctioning. What may the paramedic give?", "a": "Nebulized epinephrine (1 mg/ml) 3 mg in 3 ml 0.9% NaCl", "src": "NH PCP v9.3, 2.3P"},
+    {"cat": "NH protocol · Paramedic", "q": "A child has croup (history of stridor, barky cough). Which medication is on the croup paramedic order?", "a": "Dexamethasone 0.6 mg/kg, PO preferred, maximum 10 mg", "src": "NH PCP v9.3, 2.3P"},
+    {"cat": "NH protocol", "q": "After a spinal cord injury, which signs point to neurogenic shock?", "a": "Warm, dry skin, bradycardia, and/or hypotension", "src": "NH PCP v9.3, 4.6"},
+    {"cat": "NH protocol", "q": "Which locations of blood loss are listed for hemorrhagic shock?", "a": "Chest, abdomen, pelvis, and multiple long bone fractures", "src": "NH PCP v9.3, 4.6"},
+    {"cat": "NH protocol", "q": "Under the standing orders, how should a patient in traumatic shock be positioned?", "a": "Keep the patient supine", "src": "NH PCP v9.3, 4.6"},
+    {"cat": "NH protocol", "q": "Which standing order is added at the EMT level, beyond the EMR orders?", "a": "Assess blood glucose", "src": "NH PCP v9.3, 4.6"},
+    {"cat": "NH protocol", "q": "For obstructive shock from a suspected pulmonary embolism, what is directed?", "a": "Rapid transport", "src": "NH PCP v9.3, 2.22"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "An AEMT gives IV fluid in 250 ml boluses for adult non-traumatic shock. What endpoint and limit apply?", "a": "Coherent mental status or radial pulse; 2000 ml maximum without Medical Control", "src": "NH PCP v9.3, 2.22"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "An adult in traumatic shock also has a traumatic brain injury. What systolic BP should AEMT fluid titration maintain?", "a": "Greater than 110 mm Hg", "src": "NH PCP v9.3, 4.6"},
+    {"cat": "NH protocol · Paramedic", "q": "A child in non-traumatic shock has received 60 ml/kg of IV fluid without an adequate response. What does the paramedic order direct?", "a": "Contact Medical Control", "src": "NH PCP v9.3, 2.22"},
+    {"cat": "NH protocol · Paramedic", "q": "A paramedic suspects tension pneumothorax in a trauma patient in shock. What is directed?", "a": "Consider needle thoracostomy (see 4.8)", "src": "NH PCP v9.3, 4.6"},
+    {"cat": "NH protocol", "q": "A patient rescued from a house fire has an SpO2 of 99%. What do the pearls say about this reading?", "a": "It may be inaccurate after carbon monoxide or cyanide exposure", "src": "NH PCP v9.3, 2.23"},
+    {"cat": "NH protocol", "q": "Which findings are listed as evidence of smoke inhalation?", "a": "Soot around the mouth or nostrils, singed hair, carbonaceous sputum", "src": "NH PCP v9.3, 4.0"},
+    {"cat": "NH protocol", "q": "After an electrical injury, with the power source disconnected, which EMT action is listed?", "a": "Place the patient on a cardiac monitor", "src": "NH PCP v9.3, 4.0"},
+    {"cat": "NH protocol", "q": "Where should the ambulance be positioned at a hazardous materials incident?", "a": "Uphill and upwind, more than 300 feet away", "src": "NH PCP v9.3, 9.0"},
+    {"cat": "NH protocol", "q": "While a patient is being decontaminated, which medication routes are allowed?", "a": "IM, IN, or nebulizer", "src": "NH PCP v9.3, 9.0"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "An adult burn patient has a 40-minute transport time. What IV fluid order does the AEMT follow?", "a": "Warm IV fluids at 500 mL/hr", "src": "NH PCP v9.3, 4.0"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "A child has burns over 25% BSA with a transport time under 1 hour. What IV fluid does the AEMT give?", "a": "20 mL/kg warm IV fluids over 10 to 30 minutes", "src": "NH PCP v9.3, 4.0"},
+    {"cat": "NH protocol · Paramedic", "q": "An adult burn patient has immediate, severe airway compromise. Who may perform Rapid Sequence Intubation?", "a": "Paramedics trained and credentialed for RSI by FSTEMS", "src": "NH PCP v9.3, 5.1A"},
+    {"cat": "NH protocol · Paramedic", "q": "A paramedic cannot establish an airway or ventilate a 5-year-old. Which procedure is directed?", "a": "Percutaneous cricothyrotomy (5.5)", "src": "NH PCP v9.3, 5.1P"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "(App 4) Which medication route may an AEMT use but an EMT may not?", "a": "Subcutaneous", "src": "NH PCP v9.3, App 4"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "(App 4) When may an AEMT run an intravenous pump?", "a": "Only during interfacility transfers", "src": "NH PCP v9.3, App 4"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "(App 4) How does AEMT scope for sublingual medications differ from EMT scope?", "a": "AEMT may administer; EMT may only assist", "src": "NH PCP v9.3, App 4"},
+    {"cat": "NH protocol · Paramedic", "q": "(App 4) Which medication administration route is allowed only at the paramedic level?", "a": "Rectal", "src": "NH PCP v9.3, App 4"},
+    {"cat": "NH protocol · Paramedic", "q": "(App 4) Which vascular access skill is limited to paramedics?", "a": "External jugular access", "src": "NH PCP v9.3, App 4"},
+    {"cat": "NH protocol · Paramedic", "q": "(App 4) Which positive pressure ventilation device may only paramedics use?", "a": "BiPAP device", "src": "NH PCP v9.3, App 4"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "Under Advanced EMT standing orders, how often may IM epinephrine be repeated for adult anaphylaxis?", "a": "Every 5 minutes until signs and symptoms resolve", "src": "NH PCP v9.3, 2.2A"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "An AEMT cannot establish IV access in an adult with glucose under 60 mg/dL and altered mental status. What should be given?", "a": "Glucagon 1 mg IM", "src": "NH PCP v9.3, 2.11A"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "Which antiemetic order may an AEMT give an adult with nausea or vomiting?", "a": "Ondansetron 4 mg PO, IV, or IM", "src": "NH PCP v9.3, 2.13"},
+    {"cat": "NH protocol · Paramedic", "q": "An adult is actively seizing and has no IV. What midazolam order may the paramedic use?", "a": "10 mg IM/IN, repeat every 5 minutes as needed", "src": "NH PCP v9.3, 2.20A"},
+    {"cat": "NH protocol · Paramedic", "q": "Tricyclic overdose with tachycardia: what QRS width do the paramedic orders cite as wide enough to treat with sodium bicarbonate?", "a": "More than 100 milliseconds", "src": "NH PCP v9.3, 2.19A"},
+    {"cat": "NH protocol · Paramedic", "q": "When should a paramedic consider push-dose epinephrine or an epinephrine infusion for adult anaphylaxis?", "a": "When refractory to 3 or more IM epinephrine doses", "src": "NH PCP v9.3, 2.2A"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "After the umbilical cord is clamped and cut, what oxytocin dose and route does the AEMT give the mother?", "a": "10 Units IM", "src": "NH PCP v9.3, 2.6"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "An adult has a positive sepsis screen. How much IV fluid may the AEMT rapidly give to maintain MAP above 65 mmHg?", "a": "Up to a 30 mL/kg bolus", "src": "NH PCP v9.3, 2.21A"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "For a suspected stroke, what IV access and fluid do the AEMT standing orders call for?", "a": "18 gauge IV, right AC preferred, 250 mL fluid", "src": "NH PCP v9.3, 2.24"},
+    {"cat": "NH protocol · Paramedic", "q": "An adult septic patient has no adequate hemodynamic response after IV fluids. Which pressor is preferred?", "a": "Norepinephrine infusion via pump", "src": "NH PCP v9.3, 2.21A"},
+    {"cat": "NH protocol · Paramedic", "q": "A patient in the third trimester is seizing. What magnesium sulfate order does the paramedic follow?", "a": "4 grams IV over 10 minutes, then consider 1 gram/hr", "src": "NH PCP v9.3, 2.16"},
+    {"cat": "NH protocol · Paramedic", "q": "A paramedic must intubate a newborn born before 28 weeks gestation. Which endotracheal tube size should be used?", "a": "2.5 mm", "src": "NH PCP v9.3, 2.15"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "Before an AEMT gives nitroglycerin 0.4 mg SL for suspected acute coronary syndrome, what must be in place?", "a": "An established IV", "src": "NH PCP v9.3, 3.0"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "A patient with known CHF has pulmonary edema and systolic BP 180 mmHg. What nitroglycerin dose may the AEMT give?", "a": "0.8 mg SL (2 tabs/sprays)", "src": "NH PCP v9.3, 3.3"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "After the first 2-minute cycle of adult cardiac arrest care, what epinephrine order may the AEMT follow?", "a": "1 mg IV (0.1 mg/mL), repeat every other cycle", "src": "NH PCP v9.3, 3.2A"},
+    {"cat": "NH protocol · Paramedic", "q": "An adult with symptomatic bradycardia is hemodynamically unstable. What atropine order may the paramedic follow?", "a": "1 mg IV every 3 to 5 minutes, maximum 3 mg", "src": "NH PCP v9.3, 3.1A"},
+    {"cat": "NH protocol · Paramedic", "q": "A stable adult has a regular narrow complex tachycardia over 150 bpm despite vagal maneuvers. What adenosine dosing applies?", "a": "6 mg rapid IV push, then 12 mg in 1 to 2 minutes", "src": "NH PCP v9.3, 3.5A"},
+    {"cat": "NH protocol · Paramedic", "q": "An adult with a narrow, regular tachycardia is hemodynamically unstable. What initial synchronized cardioversion energy does the paramedic order list?", "a": "50 - 100J biphasic or 200J monophasic", "src": "NH PCP v9.3, 3.5A"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "An adult burn patient has a transport time under 1 hour. What IV fluid order does the AEMT follow?", "a": "Warm IV fluids at 500 mL/hr", "src": "NH PCP v9.3, 4.0"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "For an adult with traumatic brain injury, the AEMT gives small IV fluid boluses to keep systolic blood pressure above what?", "a": "110 mmHg", "src": "NH PCP v9.3, 4.9"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "A patient has blunt or penetrating eye trauma. What does the AEMT order strongly recommend?", "a": "An anti-emetic to prevent vomiting", "src": "NH PCP v9.3, 4.3"},
+    {"cat": "NH protocol · Paramedic", "q": "How does the paramedic prepare and give tranexamic acid?", "a": "1 gram in 50 - 100 mL 0.9% NaCl over about 10 minutes", "src": "NH PCP v9.3, 4.4"},
+    {"cat": "NH protocol · Paramedic", "q": "An adult has a significant crush injury with prolonged entrapment. What sodium bicarbonate bolus may the paramedic consider?", "a": "1 mEq/kg IV/IO over 5 minutes", "src": "NH PCP v9.3, 4.1A"},
+    {"cat": "NH protocol · Paramedic", "q": "In traumatic cardiac arrest, which chest procedure does the paramedic order say to consider?", "a": "Bilateral needle chest decompression", "src": "NH PCP v9.3, 4.10"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "An adult's severe asthma is not responding to treatment. What may the AEMT consider?", "a": "Epinephrine 0.3 mg IM, autoinjector preferred", "src": "NH PCP v9.3, 2.3A"},
+    {"cat": "NH protocol · Paramedic", "q": "When starting BiPAP, where does the paramedic set IPAP, and what is its maximum?", "a": "10 cmH2O, not to exceed 20 cmH2O", "src": "NH PCP v9.3, 5.3"},
+    {"cat": "NH protocol · Paramedic", "q": "Surgical (bougie-assisted) cricothyrotomy is contraindicated in patients younger than what age?", "a": "8 years", "src": "NH PCP v9.3, 5.6"},
+    {"cat": "NH protocol · Paramedic", "q": "What limit does the orotracheal intubation protocol suggest for laryngoscopy attempts?", "a": "Two attempts, maximum three", "src": "NH PCP v9.3, 5.10"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "Name a contraindication to intraosseous (IO) access.", "a": "Placement in or distal to a fractured bone", "src": "NH PCP v9.3, 6.4"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "An alert adult has a new IO line. What lidocaine dose is given slowly before the flush?", "a": "1 - 2.5 mL (20 - 50 mg) 2% lidocaine", "src": "NH PCP v9.3, 6.4"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "Which finding shows an IO needle is placed correctly?", "a": "Aspiration yields blood with marrow particulate matter", "src": "NH PCP v9.3, 6.4"},
+    {"cat": "NH protocol · Paramedic", "q": "When may a paramedic use double sequential defibrillation?", "a": "Refractory VF/VT after 3 failed shocks, with a second manual defibrillator", "src": "NH PCP v9.3, 6.2"},
+    {"cat": "NH protocol · Paramedic", "q": "How does the paramedic confirm gastric tube placement?", "a": "Instill air with a 60 mL syringe and listen over the epigastrium", "src": "NH PCP v9.3, 6.3"},
+    {"cat": "NH protocol · Paramedic", "q": "A combative patient is restrained prone. When may the paramedic give chemical sedation?", "a": "Only after repositioning so breathing is not restricted", "src": "NH PCP v9.3, 6.5"},
+    {"cat": "NH protocol · AEMT and Paramedic", "q": "A patient has a POLST form. For what purpose may an AEMT start an IV?", "a": "To give medications outlined in Section B", "src": "NH PCP v9.3, 8.7"},
+    {"cat": "NH protocol · Paramedic", "q": "For narrow complex PEA with a rate above 40, or refractory VF/VT, how long may a paramedic consider extended resuscitation?", "a": "Up to 60 minutes from the time of dispatch", "src": "NH PCP v9.3, 8.15"},
+    {"cat": "NH protocol · Paramedic", "q": "An urgent care clinic started a treatment shortly before EMS arrived. What does the paramedic order allow?", "a": "The paramedic may continue that treatment", "src": "NH PCP v9.3, 8.5"},
+    {"cat": "NH protocol · Paramedic", "q": "As an adjunct to hospice kit medications, what midazolam dose may a paramedic consider for anxiety?", "a": "2.5 mg IN, repeat every 10 - 15 minutes, maximum 6 mg", "src": "NH PCP v9.3, 8.8"}
   ];
 
   /* ---------- Sample data, built around the current clock. Fictional names only (checked against the roster). Contract v0.5. ---------- */
@@ -885,10 +1096,23 @@ html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of 
     if (!deck.length) return;
     var c = deck[order[cardIx % order.length]] || deck[0], el = byId('card');
     var long = (c.q.length + (showAnswer ? c.a.length : 0)) > 190;
-    el.className = 'card' + (long ? ' card--long' : '');
+    el.className = 'card' + (long ? ' card--long' : '') + (showAnswer ? ' card--answer' : '');
     el.innerHTML = '<div class="card__top"><span class="card__cat">' + esc(c.cat) + '</span><span class="card__count">' + ((cardIx % deck.length) + 1) + ' / ' + deck.length + '</span></div>' +
-      '<div class="card__body"><div class="card__q">' + esc(c.q) + '</div>' + (showAnswer ? '<div class="card__a"><b>Answer</b>' + esc(c.a) + '</div>' : '') + '</div>' +
+      '<div class="card__body"><div class="card__fit"><div class="card__q">' + esc(c.q) + '</div>' + (showAnswer ? '<div class="card__a"><b>Answer</b>' + esc(c.a) + '</div>' : '') + '</div></div>' +
       '<div class="card__src">' + (showAnswer ? 'Source: ' + esc(c.src || '') : 'Answer in ' + CFG.cardQuestionSec + ' seconds') + '</div>';
+    fitCard();
+  }
+  /* Shrink the card text until question and answer fit the zone; if they still do not fit, the answer side drops the question. */
+  function fitCard() {
+    var bd = document.querySelector('#card .card__body'), f = bd && bd.firstChild;
+    if (!f) return;
+    var z = 1, tooBig = function () { return bd.scrollHeight > bd.clientHeight + 1; };
+    f.style.zoom = ''; Array.prototype.forEach.call(f.children, function (k) { k.hidden = false; });
+    while (tooBig() && z > 0.55) { z -= 0.05; f.style.zoom = z.toFixed(2); }
+    if (tooBig() && f.querySelector('.card__a')) {
+      f.querySelector('.card__q').hidden = true; z = 1; f.style.zoom = '';
+      while (tooBig() && z > 0.55) { z -= 0.05; f.style.zoom = z.toFixed(2); }
+    }
   }
   function flipTo(fn) { var el = byId('card'); el.classList.add('is-flip'); setTimeout(function () { fn(); }, 230); }   // paintCard resets the class, so the card turns back with the answer side showing
   function fadeTo(fn) { var el = byId('card'); el.classList.add('is-fading'); setTimeout(function () { fn(); el.classList.remove('is-fading'); }, 130); }
@@ -1093,6 +1317,7 @@ html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of 
       var el = byId(id); if (el) { el.setAttribute('data-total', '0'); el.innerHTML = '<div class="none">' + shape('caution') + ' Reconnecting to the schedule feed.</div>'; }
     });
     fitAll();
+    fitCard();
   }
   function refresh() {
     return loadBoard().then(function (board) { render(board); markRefreshed(board); checkStale(); if (board.reconnecting || board.cached) setTimeout(retryFeed, 60000); }).then(loadWeather).then(renderWeather).then(fitAll);
