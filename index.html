@@ -532,7 +532,7 @@ html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of 
     transitionDate: '2027-01-01T00:00:00',                          // Jaffrey Memorial Ambulance
     newName: 'Jaffrey Memorial Ambulance',                          // masthead title from the transition date
     refreshMinutes: 5,                                              // data reload cadence
-    feedTimeoutMs: 8000,                                            // give up on a feed fetch after this and use the last good copy
+    feedTimeoutMs: 25000,                                           // give up on a feed fetch after this and use the last good copy
     staleMinutes: 30,                                               // show a caution when data is older than this
     nightlyReloadHour: 3,
     checksComingSoon: true,                                         // "Coming soon" sticker over truck-check status (OOS still shows)
@@ -958,8 +958,17 @@ html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of 
     }).catch(function () {
       var c = store.get('board');
       if (c && c.shifts) { c.live = false; c.cached = true; return c; }
-      var s = sampleBoard(); s.fallback = true; return s;
+      if (current && !current.sample && current.shifts) return Object.assign({}, current, { live: false, cached: true, savedAt: current.savedAt });
+      return emptyBoard();   // live board never shows sample (fictional) data (10/08/2026)
     });
+  }
+  /* Live board, feed down, no saved copy: blank zones and a Reconnecting notice instead of fictional sample data. */
+  function emptyBoard() {
+    var s = sampleBoard();
+    ['shifts', 'openShifts', 'events', 'announcements', 'intercept', 'timeOff', 'timeOffCounts', 'checks', 'celebrations', 'unitStatus', 'welcomes', 'shoutouts', 'cards']
+      .forEach(function (k) { s[k] = []; });
+    s.dutyOfficer = null; s.sample = false; s.reconnecting = true; s.sources = {};
+    return s;
   }
 
   /* ---------- Weather (NWS, no key) ---------- */
@@ -997,12 +1006,14 @@ html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of 
   var lastGood = null, serverAgeMin = 0;
   function markRefreshed(board) {
     var t = now(), roster = board.sources && board.sources.roster;
-    if (board.live) { lastGood = t; serverAgeMin = (roster && roster.ageMin) || 0; }
+    var gen = board.generated ? new Date(board.generated) : null, genAge = gen && !isNaN(gen) ? Math.max(0, Math.round((t - gen) / 60000)) : 0;
+    if (board.live) { lastGood = t; serverAgeMin = ((roster && roster.ageMin) || 0) + genAge; }   // genAge: a stale server cache now shows as stale
     else if (board.cached && board.savedAt) { lastGood = new Date(board.savedAt); serverAgeMin = (roster && roster.ageMin) || 0; }
     else { lastGood = t; serverAgeMin = 0; }
     byId('refreshed').textContent = 'Refreshed ' + hhmm(t);
     var tag = byId('sampleTag'), sep = byId('sampleSep'), note = byId('feedNote');
     if (board.live) { tag.hidden = true; sep.hidden = true; note.textContent = 'Roster: WhenToWork'; }
+    else if (board.reconnecting) { tag.hidden = false; sep.hidden = false; tag.textContent = 'Reconnecting'; note.textContent = 'Feed not reachable; retrying every minute'; }
     else if (board.cached) { tag.hidden = false; sep.hidden = false; tag.textContent = 'Last good data'; note.textContent = 'Feed not reachable; showing the last copy'; }
     else { tag.hidden = false; sep.hidden = false; tag.textContent = 'Sample data'; note.textContent = board.fallback ? 'Feed not reachable; no saved copy' : 'Roster: WhenToWork (pending)'; }
   }
@@ -1061,11 +1072,16 @@ html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of 
     renderDuty(board.dutyOfficer);
     renderCountdown();
     setDeck(board.cards);
+    if (board.reconnecting) ['groups', 'next', 'open', 'events', 'ann'].forEach(function (id) {   // no "all covered" or "no crew" claims while the feed is down
+      var el = byId(id); if (el) { el.setAttribute('data-total', '0'); el.innerHTML = '<div class="none">' + shape('caution') + ' Reconnecting to the schedule feed.</div>'; }
+    });
     fitAll();
   }
   function refresh() {
-    return loadBoard().then(function (board) { render(board); markRefreshed(board); checkStale(); }).then(loadWeather).then(renderWeather).then(fitAll);
+    return loadBoard().then(function (board) { render(board); markRefreshed(board); checkStale(); if (board.reconnecting || board.cached) setTimeout(retryFeed, 60000); }).then(loadWeather).then(renderWeather).then(fitAll);
   }
+  var retrying = false;
+  function retryFeed() { if (retrying || FROZEN) return; retrying = true; loadBoard().then(function (b) { retrying = false; if (b.live) { render(b); markRefreshed(b); checkStale(); } }, function () { retrying = false; }); }
   function scheduleNightlyReload() {
     if (FROZEN) return;
     var t = new Date(), next = new Date(t);
