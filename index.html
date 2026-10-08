@@ -196,6 +196,8 @@ svg.shape{width:.7em;height:.7em;fill:currentColor;flex:none}
 /* Flashcards: question, then answer; 120 ms opacity change only (design system motion rule) */
 .card{background:var(--surface-info);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;display:grid;grid-template-rows:auto 1fr auto;gap:.5rem;height:100%;min-height:0;transition:opacity 120ms ease-out}
 .card.is-fading{opacity:0}
+.card{transition:opacity 120ms ease-out,transform 220ms ease-in-out}
+.card.is-flip{transform:perspective(1200px) rotateY(90deg)}   /* question flips over to the answer (Clifton 10/08/2026) */
 .card__top{display:flex;justify-content:space-between;align-items:baseline;gap:1rem}
 .card__cat{font-size:1rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--brand-blue)}
 .card__count{font-family:var(--mono);font-size:1rem;color:var(--ink-subtle)}
@@ -865,13 +867,19 @@ html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of 
     for (var j = n - 1; j > 0; j--) { s = s * 16807 % 2147483647; var k = s % (j + 1); var tmp = a[j]; a[j] = a[k]; a[k] = tmp; }
     return a;
   }
-  var order = [];
-  function setDeck(cards) {
-    var next = (cards && cards.length) ? cards : DEFAULT_CARDS;
-    if (next === deck && order.length) return;
-    deck = next;
+  var order = [], deckSig = '', pendingDeck = null, cycling = false;
+  function cardSig(list) { return list.map(function (c) { return c.q + '|' + c.a; }).join('\n'); }
+  function applyDeck(next, sig) {
+    deck = next; deckSig = sig; pendingDeck = null;
     var t = now(); order = seededOrder(deck.length, t.getFullYear() * 1000 + t.getMonth() * 40 + t.getDate());
     cardIx = CARD_PIN ? (parseInt(CARD_PIN, 10) || 0) % deck.length : 0;
+  }
+  /* The feed sends the deck every refresh (now every minute). Same cards: keep the place in the deck.
+     New cards: wait until the current card has shown its answer, then switch (10/08/2026). */
+  function setDeck(cards) {
+    var next = (cards && cards.length) ? cards : DEFAULT_CARDS, sig = cardSig(next);
+    if (sig === deckSig && order.length) { pendingDeck = null; return; }
+    if (cycling) pendingDeck = { cards: next, sig: sig }; else applyDeck(next, sig);
   }
   function paintCard(showAnswer) {
     if (!deck.length) return;
@@ -882,14 +890,19 @@ html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of 
       '<div class="card__body"><div class="card__q">' + esc(c.q) + '</div>' + (showAnswer ? '<div class="card__a"><b>Answer</b>' + esc(c.a) + '</div>' : '') + '</div>' +
       '<div class="card__src">' + (showAnswer ? 'Source: ' + esc(c.src || '') : 'Answer in ' + CFG.cardQuestionSec + ' seconds') + '</div>';
   }
+  function flipTo(fn) { var el = byId('card'); el.classList.add('is-flip'); setTimeout(function () { fn(); }, 230); }   // paintCard resets the class, so the card turns back with the answer side showing
   function fadeTo(fn) { var el = byId('card'); el.classList.add('is-fading'); setTimeout(function () { fn(); el.classList.remove('is-fading'); }, 130); }
   function cycleCards() {
     clearTimeout(cardTimer);
     if (FROZEN) { paintCard(demo('answer')); return; }
+    cycling = true;
     paintCard(false);
     cardTimer = setTimeout(function () {
-      fadeTo(function () { paintCard(true); });
-      cardTimer = setTimeout(function () { cardIx++; fadeTo(function () { paintCard(false); }); cycleCards(); }, CFG.cardAnswerSec * 1000);
+      flipTo(function () { paintCard(true); });
+      cardTimer = setTimeout(function () {
+        if (pendingDeck) applyDeck(pendingDeck.cards, pendingDeck.sig); else cardIx++;
+        fadeTo(cycleCards);
+      }, CFG.cardAnswerSec * 1000);
     }, CFG.cardQuestionSec * 1000);
   }
 
