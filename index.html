@@ -962,7 +962,12 @@ html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of 
     byId('groups').innerHTML = names.length ? names.map(function (g) {
       var crew = groups[g];
       return '<div class="grp"><div class="grp__head"><span class="grp__name">' + esc(g) + '</span><span class="grp__hours">' + span(crew) + '</span></div><div class="crew">' +
-        crew.map(function (c) { return '<div class="crew__name">' + esc(c.name) + '</div><div class="crew__pos">' + esc(c.position) + '</div>'; }).join('') + '</div></div>';
+        crew.map(function (c) {   // own hours when they differ from the group's (split shifts, 10/11/2026)
+          var gs = span(crew).split('–'), own = [];
+          if (hhmm(new Date(c.start)) !== gs[0]) own.push('from ' + hhmm(new Date(c.start)));
+          if (hhmm(new Date(c.end)) !== gs[1]) own.push('until ' + hhmm(new Date(c.end)));
+          return '<div class="crew__name">' + esc(c.name) + '</div><div class="crew__pos">' + esc(c.position) + (own.length ? ' <span class="crew__own">· ' + own.join(', ') + '</span>' : '') + '</div>';
+        }).join('') + '</div></div>';
     }).join('') : '<div class="none">' + shape('caution') + ' No crew on the schedule right now.</div>';
     byId('nowMeta').textContent = onNow.length ? onNow.length + ' on duty' : '';
 
