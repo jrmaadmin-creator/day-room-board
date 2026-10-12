@@ -434,6 +434,7 @@ b,strong{font-weight:600}
 /* Whole In/Out and truck-check lines in green or red (Clifton 10/08/2026) */
 .unit .badge--caution{color:var(--status-critical)}   /* Check due badge red to match its line (Clifton 10/08/2026) */
 .unit .unit__sio--in,.unit .unit__sio--in b,.unit .unit__check--stable,.unit .unit__check--stable span{color:var(--status-stable)}
+.unit .unit__sio--remind,.unit .unit__sio--remind b{color:var(--status-caution)}
 .unit .unit__sio--out,.unit .unit__sio--out b,.unit .unit__check--caution,.unit .unit__check--critical,.unit .unit__check--caution span,.unit .unit__check--critical span{color:var(--status-critical)}
 /* Night dim: same layout, lower brightness (Clifton 10/06/2026) */
 #dimOverlay{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:2147483647}
@@ -1002,7 +1003,9 @@ html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of 
   /* Simple In/Out (the phone app): what the crew set, In or Out, and since when. Status word only; comments never reach the feed. */
   function sioLine(s, fed) {
     if (!fed) return '';
-    if (!s || s.status === 'unknown' || !s.since) return '<div class="unit__sio">' + shape('info') + 'In/Out: <span>not reported</span></div>';
+    // Until the Simple In/Out geofence works (Clifton 10/12/2026): show the level selected; when not In, remind the crew to click In.
+    var lvl = s && s.level ? '<b class="sio__lvl">' + esc(s.level) + '</b> selected' : 'No level selected';
+    if (!s || s.status !== 'in' || !s.since) return '<div class="unit__sio unit__sio--remind">' + shape('caution') + lvl + ' · <b>Click In</b> on Simple In/Out</div>';
     var word = s.status === 'in' ? 'In' : s.status === 'out' ? 'Out' : 'Other', d = new Date(s.since);
     var when = d.toDateString() === now().toDateString() ? hhmm(d) : dow3(d) + ' ' + hhmm(d);
     var cls = s.status === 'in' ? ' class="sio--in"' : s.status === 'out' ? ' class="sio--out"' : '';   // In green, Out red (Clifton 10/07/2026)
@@ -1148,7 +1151,7 @@ html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of 
     var als = (shifts || []).filter(function (s) { return new Date(s.start) <= t && t < new Date(s.end) && /paramedic|medic/i.test(s.position); });
     var alsLine = als.length
       ? '<div class="ic__als">' + shape('stable') + '<span>Paramedic on duty: <b>' + als.map(function (s) { return esc(s.name) + ' (' + esc(groupOf(s)) + ')'; }).join(', ') + '</b></span></div>'
-      : '<div class="ic__als">' + shape('caution') + '<span>No paramedic on duty right now</span></div>';
+      : '';   // 'No paramedic on duty' line removed (Clifton 10/12/2026)
     var laterLine = later.length ? '<div class="ic__later">Later today: ' + later.map(function (p) { return esc(p.name) + ' from ' + esc(p.from); }).join(', ') + '</div>' : '';
     var html;
     if (nowList.length) {
@@ -1159,7 +1162,7 @@ html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of 
             (p.note ? '<div class="ic__note">' + esc(p.note) + '</div>' : '') + '</div>';
         }).join('') + laterLine + alsLine + '</div>';
     } else {
-      html = '<div class="ic ic--caution"><div class="ic__state">' + shape('caution') + 'No JRMA medic available</div><div class="ic__action">' + esc(CFG.interceptNoneNote) + '</div>' + laterLine + alsLine + '</div>';
+      html = '<div class="ic ic--caution"><div class="ic__state">' + shape('caution') + 'No JRMA Medic On-call</div><div class="ic__action">' + esc(CFG.interceptNoneNote) + '</div>' + laterLine + alsLine + '</div>';
     }
     byId('intercept').innerHTML = html;
   }
