@@ -1542,7 +1542,7 @@ html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of 
       if (!pending || active) return false;
       var pd = pending, e = et(now());
       if (Date.now() > pd.deadline) { pending = null; return false; }
-      if (pd.preview) { if (!alertFree() || !zoneVisible() || document.hidden) { pending = null; return false; } }
+      if (pd.preview) { if (!alertFree() || !zoneVisible()) return false; }   // preview waits (up to 5 min) instead of dropping
       else if (!S.enabled || quiet(e) || !safe()) { pending = null; return false; }
       var p = pick(pd.preview);
       pending = null;
@@ -1551,7 +1551,19 @@ html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of 
       fadeTo(function () { show(p, pd.preview, function () { fadeTo(cycleCards); }); });
       return true;
     }
+    var errs = [];
+    window.addEventListener('error', function (ev) { errs.push(String(ev.message || ev).slice(0, 80)); });
+    function debugLine() {
+      if (!onOff(qs.get('pearlDebug'))) return;
+      var d = byId('pearlDebug');
+      if (!d) { d = document.createElement('div'); d.id = 'pearlDebug'; d.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:60;font:14px/1.3 monospace;color:#ffd166;background:rgba(0,0,0,.75);padding:4px 8px;max-width:70vw'; document.body.appendChild(d); }
+      var e = et(now());
+      d.textContent = 'pearl dbg | on ' + S.enabled + ' snd ' + S.soundEnabled + ' | vis ' + document.visibilityState + ' | zone ' + zoneVisible() + ' alertFree ' + alertFree() + ' wx ' + (wx.known ? 'live' : 'unknown') +
+        ' | pend ' + (pending ? (pending.preview ? 'preview' : pending.id) + ' ' + Math.round((pending.deadline - Date.now()) / 1000) + 's' : '-') + ' | act ' + (active ? active.id + ' bark ' + active.barked : '-') +
+        ' | audio ' + (ctx ? ctx.state : 'none') + ' | ET ' + (e ? e.h + ':' + pad(e.m) : 'n/a') + (errs.length ? ' | ERR ' + errs.join(' / ') : '');
+    }
     function tick() {
+      try { debugLine(); } catch (x) {}
       var e = et(now());
       if (active) {
         if (document.hidden || !alertFree() || !zoneVisible()) return cancel('blocked');
@@ -1575,7 +1587,7 @@ html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of 
     }
     function setEnabled(on) { S.enabled = !!on; store.set('pearl.settings', { enabled: S.enabled, soundEnabled: S.soundEnabled, intervalMinutes: S.intervalMinutes, volume: S.volume }); if (!on) cancel('disabled'); else armedAt = Date.now(); }
     function setSound(on) { S.soundEnabled = !!on; if (!on) stopAudio(); store.set('pearl.settings', { enabled: S.enabled, soundEnabled: S.soundEnabled, intervalMinutes: S.intervalMinutes, volume: S.volume }); }
-    function preview() { pending = { id: 'preview', preview: true, deadline: Date.now() + 90000 }; }
+    function preview() { pending = { id: 'preview', preview: true, deadline: Date.now() + 300000 }; }
     function start() {
       S = settings(); armedAt = Date.now();
       if (FROZEN) return;
