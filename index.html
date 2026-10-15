@@ -584,6 +584,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     cardQuestionSec: 30,                                            // flashcard: seconds on the question
     cardAnswerSec: 10,                                              // flashcard: seconds with the answer shown
     gameQuestionSec: 45, gameBoardSec: 15,                          // trivia game: question side, then last shift's answer and the top 5 (ADR-003)
+    gameSlots: [0, 30], gameSlotMin: 3,                             // game card (with QR) only at :00-:03 and :30-:33 each hour; the flashcard deck runs the rest (Clifton 10/15/2026)
     interceptAvailableNote: 'Call the medic, then notify dispatch',  // confirm wording with the Chief (B-05)
     interceptNoneNote: 'Request an ALS intercept through dispatch.'  // confirm wording with the Chief (B-05)
   };
@@ -1143,7 +1144,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
      last shift's answer and the month's top 5. The current answer never reaches the board. Game off: the deck as before. */
   var GAMEV = null, qrSig = '', qrSvg = '';
   function gameOn() { return !!(GAMEV && GAMEV.on && GAMEV.card); }
-  function setGame(g) { GAMEV = g || null; var z = document.querySelector('.z-cards'); if (z) z.classList.toggle('is-game', gameOn()); document.body.classList.toggle('has-game', gameOn()); var m = byId('cardsMeta'); if (m) m.textContent = gameOn() ? 'Question of the shift' : 'Protocols, EMS, JRMA, trivia'; }
+  function gameSlot() {   // game is on AND the clock is inside one of the game windows; demo=game forces it for screenshots
+    if (!gameOn()) return false;
+    if (demo('game')) return true;
+    var m = now().getMinutes();
+    return CFG.gameSlots.some(function (s) { return m >= s && m < s + CFG.gameSlotMin; });
+  }
+  function gameLook(on) { var z = document.querySelector('.z-cards'); if (z) z.classList.toggle('is-game', on); document.body.classList.toggle('has-game', on); var m = byId('cardsMeta'); if (m) m.textContent = on ? 'Question of the shift' : 'Protocols, EMS, JRMA, trivia'; }
+  function setGame(g) { GAMEV = g || null; gameLook(gameSlot()); }
   function qr(url) {
     if (url === qrSig) return qrSvg;
     qrSig = url; qrSvg = '';
@@ -1167,7 +1175,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     fitCard();
   }
   function paintCard(showAnswer) {
-    if (gameOn()) { paintGame(showAnswer); return; }
+    var slot = gameSlot(); gameLook(slot);
+    if (slot) { paintGame(showAnswer); return; }
     if (!deck.length) return;
     var c = deck[order[cardIx % order.length]] || deck[0], el = byId('card');
     var long = (c.q.length + (showAnswer ? c.a.length : 0)) > 190;
@@ -1199,10 +1208,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     cardTimer = setTimeout(function () {
       flipTo(function () { paintCard(true); });
       cardTimer = setTimeout(function () {
-        if (pendingDeck) applyDeck(pendingDeck.cards, pendingDeck.sig); else if (!gameOn()) cardIx++;
+        if (pendingDeck) applyDeck(pendingDeck.cards, pendingDeck.sig); else if (!gameSlot()) cardIx++;
         fadeTo(cycleCards);
-      }, (gameOn() ? CFG.gameBoardSec : CFG.cardAnswerSec) * 1000);
-    }, (gameOn() ? CFG.gameQuestionSec : CFG.cardQuestionSec) * 1000);
+      }, (gameSlot() ? CFG.gameBoardSec : CFG.cardAnswerSec) * 1000);
+    }, (gameSlot() ? CFG.gameQuestionSec : CFG.cardQuestionSec) * 1000);
   }
 
   /* ---------- Medic intercept ---------- */
