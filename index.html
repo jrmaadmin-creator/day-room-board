@@ -178,6 +178,7 @@ svg.shape{width:.7em;height:.7em;fill:currentColor;flex:none}
 .ann__meta{font-size:1rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--brand-gold);display:flex;justify-content:space-between;gap:1rem}
 .ann__meta .exp{color:var(--ink-subtle);font-family:var(--mono);letter-spacing:.02em}
 .ann__text{font-size:1.5rem;line-height:1.3;margin-top:.375rem}
+.ann__text--clamp{display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}   /* first announcement too tall for the zone: cut with an ellipsis instead of hiding it (Clifton 10/15/2026) */
 
 /* Birthdays: gold marks recognition in this system */
 .bd{display:grid;gap:.5rem}
@@ -1342,6 +1343,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     return kids.filter(function (k) { return k.hidden; }).length;
   }
+  /* Announcements: the newest one always shows. If it alone is taller than the zone, shrink its text up to 3 steps, then cut it with an ellipsis (Clifton 10/15/2026). */
+  function keepFirstAnn(el) {
+    var k = el.children[0], t = k && k.querySelector('.ann__text');
+    if (!t || !k.hidden) return 0;
+    k.hidden = false;
+    var fs = parseFloat(getComputedStyle(t).fontSize), steps = 0;
+    while (el.scrollHeight > el.clientHeight + 1 && steps++ < 3) { fs *= 0.92; t.style.fontSize = fs + 'px'; }
+    if (el.scrollHeight > el.clientHeight + 1) {
+      var lh = parseFloat(getComputedStyle(t).lineHeight) || fs * 1.3, over = el.scrollHeight - el.clientHeight;
+      t.classList.add('ann__text--clamp'); t.style.display = '-webkit-box'; t.style.webkitBoxOrient = 'vertical'; t.style.overflow = 'hidden';
+      var lines = Math.max(1, Math.floor((t.clientHeight - over) / lh));
+      t.style.webkitLineClamp = String(lines);
+      while (el.scrollHeight > el.clientHeight + 1 && lines > 1) t.style.webkitLineClamp = String(--lines);
+    }
+    return 1;
+  }
+  function resetAnn(el) {
+    Array.prototype.forEach.call(el.querySelectorAll('.ann__text'), function (t) { t.style.fontSize = ''; t.style.webkitLineClamp = ''; t.style.display = ''; t.style.webkitBoxOrient = ''; t.style.overflow = ''; t.classList.remove('ann__text--clamp'); });
+  }
   var META = { open: 'openMeta', events: 'eventsMeta', ann: 'annMeta', bday: 'bdMeta' };   // Out this week removed from the board (Clifton 10/05/2026)
   /* Four or more shift groups on at once: tighten the cards before anything below them is clipped. */
   function fitRoster() {
@@ -1353,7 +1373,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     fitRoster();
     Object.keys(META).forEach(function (id) {
       var el = byId(id), total = parseInt(el.getAttribute('data-total') || '0', 10);
+      if (id === 'ann') resetAnn(el);
       var hidden = fit(id, id === 'events');
+      if (id === 'ann') hidden -= keepFirstAnn(el);
       if (!total) hidden = 0;
       if (id === 'events') hidden += Math.max(0, total - el.children.length);
       var m = byId(META[id]), base = m.getAttribute('data-base') || m.textContent;
