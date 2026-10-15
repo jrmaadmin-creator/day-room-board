@@ -438,6 +438,16 @@ b,strong{font-weight:600}
 
 .open__what{white-space:normal}
 
+/* Layout 10/15/2026 (Clifton): Next shift as cards like On duty now; Open shifts compact (about 2 rows, the rest as "+N more");
+   Medic availability hidden for now; Trivia moved to the middle column and enlarged; Announcements keeps the right column. */
+.z-intercept{display:none}
+.z-open{flex:0 0 auto;min-height:0}
+.z-open .zone__body{max-height:5.75rem;overflow:hidden}
+.col--2 .z-cards,.col--2 .z-cards.is-game{flex:0 1 22rem;min-height:15rem}
+.col--2 .card--game .card__q{font-size:var(--t-body);line-height:1.25}
+.col--2 .game{grid-template-columns:1fr 10.5rem}
+.col--2 .game__opts li{font-size:var(--t-body)}
+
 /* Night mode 22:00 to 06:00 (Clifton, 10/03/2026): dimmer ink, crew zone, flashcard and time off hidden.
    Status colors and the NWS alert band stay at full strength. Times in CFG.nightStart / CFG.nightEnd. */
 .board.is-night{--ink:#b3bccb;--ink-muted:#8591a3;--ink-subtle:#7a8597;--brand-blue:#5a7fc4;--border:#252b35}
@@ -492,11 +502,11 @@ html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of 
         <div class="duty" id="duty" hidden></div>
         <div class="zone__body groups" id="groups"></div>
       </section>
-      <section class="zone">
+      <section class="zone z-next">
         <div class="zone__head"><h2 class="zone__title">Next shift</h2><span class="zone__meta" id="nextMeta"></span></div>
-        <div class="zone__body next" id="next"></div>
+        <div class="zone__body groups next" id="next"></div>
       </section>
-      <section class="zone zone--grow z-open">
+      <section class="zone z-open">
         <div class="zone__head"><h2 class="zone__title">Open shifts</h2><span class="zone__meta" id="openMeta">Claim in WhenToWork</span></div>
         <div class="zone__body open" id="open"></div>
       </section>
@@ -507,9 +517,13 @@ html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of 
         <div class="zone__head"><h2 class="zone__title">Units</h2><span class="zone__meta" id="unitsMeta">Truck check</span></div>
         <div class="zone__body units" id="units"></div>
       </section>
-      <section class="zone z-intercept">
+      <section class="zone z-intercept" hidden>
         <div class="zone__head"><h2 class="zone__title">Medic availability</h2><span class="zone__meta" id="icMeta"></span></div>
         <div class="zone__body"><div id="intercept"></div></div>
+      </section>
+      <section class="zone z-cards">
+        <div class="zone__head"><h2 class="zone__title">Trivia</h2><span class="zone__meta" id="cardsMeta">Protocols, EMS, JRMA, trivia</span></div>
+        <div class="zone__body"><div class="card" id="card"></div></div>
       </section>
       <section class="zone zone--grow">
         <div class="zone__head"><h2 class="zone__title">Next 7 days</h2><span class="zone__meta" id="eventsMeta"></span></div>
@@ -525,10 +539,6 @@ html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of 
       <section class="zone z-bday" id="bdZone">
         <div class="zone__head"><h2 class="zone__title">Crew</h2><span class="zone__meta" id="bdMeta">This week</span></div>
         <div class="zone__body bd" id="bday"></div>
-      </section>
-      <section class="zone z-cards">
-        <div class="zone__head"><h2 class="zone__title">Trivia</h2><span class="zone__meta" id="cardsMeta">Protocols, EMS, JRMA, trivia</span></div>
-        <div class="zone__body"><div class="card" id="card"></div></div>
       </section>
     </div>
   </main>
@@ -1007,9 +1017,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       var block = upcoming.filter(function (s) { return new Date(s.start).getTime() === firstStart; });
       var ng = {};
       block.forEach(function (s) { (ng[groupOf(s)] = ng[groupOf(s)] || []).push(s); });
-      byId('next').innerHTML = Object.keys(ng).sort(function (a, b) { return rank(a) - rank(b); }).map(function (g) {
-        return '<div class="next__row"><span class="next__grp">' + esc(g) + '</span><span class="next__crew">' +
-          ng[g].map(function (c) { return '<b>' + esc(c.name) + '</b> <span>' + esc(c.position) + '</span>'; }).join(' &nbsp;·&nbsp; ') + '</span></div>';
+      byId('next').innerHTML = Object.keys(ng).sort(function (a, b) { return rank(a) - rank(b); }).map(function (g) {   // same cards as On duty now (Clifton 10/15/2026)
+        return '<div class="grp"><div class="grp__head"><span class="grp__name">' + esc(g) + '</span><span class="grp__hours">' + span(ng[g]) + '</span></div><div class="crew">' +
+          ng[g].map(function (c) { return '<div class="crew__name">' + esc(c.name) + '</div><div class="crew__pos">' + esc(c.position) + '</div>'; }).join('') + '</div></div>';
       }).join('');
       var ns = new Date(upcoming[0].start), ne = new Date(block[0].end);
       byId('nextMeta').textContent = (ns.toDateString() === t.toDateString() ? 'Today' : dow3(ns) + ' ' + mmdd(ns)) + ' ' + hhmm(ns) + '–' + hhmm(ne);
@@ -1365,9 +1375,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   var META = { open: 'openMeta', events: 'eventsMeta', ann: 'annMeta', bday: 'bdMeta' };   // Out this week removed from the board (Clifton 10/05/2026)
   /* Four or more shift groups on at once: tighten the cards before anything below them is clipped. */
   function fitRoster() {
-    var g = byId('groups'), col = g.closest('.col');
-    g.classList.remove('groups--compact');
-    if (col && col.scrollHeight > col.clientHeight + 1) g.classList.add('groups--compact');
+    var g = byId('groups'), nx = byId('next'), col = g.closest('.col');
+    g.classList.remove('groups--compact'); nx.classList.remove('groups--compact');
+    if (col && col.scrollHeight > col.clientHeight + 1) { g.classList.add('groups--compact'); nx.classList.add('groups--compact'); }
   }
   function fitAll() {
     fitRoster();
