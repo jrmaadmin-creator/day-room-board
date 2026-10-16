@@ -441,6 +441,12 @@ b,strong{font-weight:600}
 /* Layout 10/15/2026 (Clifton): Next shift as cards like On duty now; Open shifts compact (about 2 rows, the rest as "+N more");
    Medic availability hidden for now; Trivia moved to the middle column and enlarged; Announcements keeps the right column. */
 .z-intercept{display:none}
+/* Next 24 hours: same cards, each person on one line (name, then level) so three or four shifts fit */
+.next .crew{display:flex;flex-direction:column;gap:0}
+.next .nx__p{display:flex;align-items:baseline;gap:.6rem;min-width:0}
+.next .nx__p .crew__name{flex:0 1 auto;min-width:0}
+.next .nx__p .crew__pos{flex:none;color:var(--ink-muted)}
+.next .grp{gap:0}
 .z-open{flex:0 0 auto;min-height:0}
 .z-open .zone__body{max-height:5.75rem;overflow:hidden}
 .col--2 .z-cards,.col--2 .z-cards.is-game{flex:0 1 22rem;min-height:15rem}
@@ -502,8 +508,8 @@ html.is-dim #dimOverlay{opacity:var(--dim-veil,.75)}   /* black veil instead of 
         <div class="duty" id="duty" hidden></div>
         <div class="zone__body groups" id="groups"></div>
       </section>
-      <section class="zone z-next">
-        <div class="zone__head"><h2 class="zone__title">Next shift</h2><span class="zone__meta" id="nextMeta"></span></div>
+      <section class="zone zone--grow z-next">
+        <div class="zone__head"><h2 class="zone__title">Next 24 hours</h2><span class="zone__meta" id="nextMeta"></span></div>
         <div class="zone__body groups next" id="next"></div>
       </section>
       <section class="zone z-open">
@@ -1012,21 +1018,24 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }).join('') : '<div class="none">' + shape('caution') + ' No crew on the schedule right now.</div>';
     byId('nowMeta').textContent = onNow.length ? onNow.length + ' on duty' : '';
 
-    var upcoming = shifts.filter(function (s) { return new Date(s.start) > t; }).sort(function (a, b) { return new Date(a.start) - new Date(b.start); });
+    /* Next 24 hours (Clifton 10/15/2026): every shift starting in the next 24 hours, one card per start time and group, same cards as On duty now. */
+    var horizon = t.getTime() + 24 * 3600000;
+    var upcoming = shifts.filter(function (s) { var st = new Date(s.start).getTime(); return st > t.getTime() && st <= horizon; }).sort(function (a, b) { return new Date(a.start) - new Date(b.start); });
     if (upcoming.length) {
-      var firstStart = new Date(upcoming[0].start).getTime();
-      var block = upcoming.filter(function (s) { return new Date(s.start).getTime() === firstStart; });
-      var ng = {};
-      block.forEach(function (s) { (ng[groupOf(s)] = ng[groupOf(s)] || []).push(s); });
-      byId('next').innerHTML = Object.keys(ng).sort(function (a, b) { return rank(a) - rank(b); }).map(function (g) {   // same cards as On duty now (Clifton 10/15/2026)
-        return '<div class="grp"><div class="grp__head"><span class="grp__name">' + esc(g) + '</span><span class="grp__hours">' + span(ng[g]) + '</span></div><div class="crew">' +
-          ng[g].map(function (c) { return '<div class="crew__name">' + esc(c.name) + '</div><div class="crew__pos">' + esc(c.position) + '</div>'; }).join('') + '</div></div>';
+      var blocks = [], byKey = {};
+      upcoming.forEach(function (s) { var k = s.start + '|' + groupOf(s); if (!byKey[k]) { byKey[k] = { start: new Date(s.start), g: groupOf(s), crew: [] }; blocks.push(byKey[k]); } byKey[k].crew.push(s); });
+      blocks.sort(function (a, b) { return a.start - b.start || rank(a.g) - rank(b.g); });
+      byId('next').setAttribute('data-total', blocks.length);
+      byId('next').innerHTML = blocks.map(function (b) {
+        var day = b.start.toDateString() === t.toDateString() ? 'Today' : dow3(b.start);
+        return '<div class="grp"><div class="grp__head"><span class="grp__name">' + esc(b.g) + '</span><span class="grp__hours">' + day + ' ' + span(b.crew) + '</span></div><div class="crew">' +
+          b.crew.map(function (c) { return '<div class="nx__p"><span class="crew__name">' + esc(c.name) + '</span> <span class="crew__pos">' + esc(c.position) + '</span></div>'; }).join('') + '</div></div>';
       }).join('');
-      var ns = new Date(upcoming[0].start), ne = new Date(block[0].end);
-      byId('nextMeta').textContent = (ns.toDateString() === t.toDateString() ? 'Today' : dow3(ns) + ' ' + mmdd(ns)) + ' ' + hhmm(ns) + '–' + hhmm(ne);
+      setMeta('nextMeta', blocks.length + (blocks.length === 1 ? ' shift' : ' shifts'));
     } else {
-      byId('next').innerHTML = '<div class="none">Nothing published yet.</div>';
-      byId('nextMeta').textContent = '';
+      byId('next').setAttribute('data-total', 0);
+      byId('next').innerHTML = '<div class="none">Nothing published for the next 24 hours.</div>';
+      setMeta('nextMeta', '');
     }
 
     var open = openShifts.filter(function (s) { return new Date(s.end) > t; }).sort(function (a, b) { return new Date(a.start) - new Date(b.start); }).slice(0, 5);
@@ -1381,12 +1390,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   function resetAnn(el) {
     Array.prototype.forEach.call(el.querySelectorAll('.ann__text'), function (t) { t.style.fontSize = ''; t.style.webkitLineClamp = ''; t.style.display = ''; t.style.webkitBoxOrient = ''; t.style.overflow = ''; t.classList.remove('ann__text--clamp'); });
   }
-  var META = { open: 'openMeta', events: 'eventsMeta', ann: 'annMeta', bday: 'bdMeta' };   // Out this week removed from the board (Clifton 10/05/2026)
+  var META = { next: 'nextMeta', open: 'openMeta', events: 'eventsMeta', ann: 'annMeta', bday: 'bdMeta' };   // Out this week removed from the board (Clifton 10/05/2026)
   /* Four or more shift groups on at once: tighten the cards before anything below them is clipped. */
   function fitRoster() {
     var g = byId('groups'), nx = byId('next'), col = g.closest('.col');
     g.classList.remove('groups--compact'); nx.classList.remove('groups--compact');
-    if (col && col.scrollHeight > col.clientHeight + 1) { g.classList.add('groups--compact'); nx.classList.add('groups--compact'); }
+    if ((col && col.scrollHeight > col.clientHeight + 1) || nx.scrollHeight > nx.clientHeight + 1) { g.classList.add('groups--compact'); nx.classList.add('groups--compact'); }
   }
   function fitAll() {
     fitRoster();
