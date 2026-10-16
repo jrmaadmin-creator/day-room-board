@@ -1005,6 +1005,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     var onNow = shifts.filter(function (s) { return new Date(s.start) <= t && t < new Date(s.end); });
     var groups = {};
     onNow.forEach(function (s) { (groups[groupOf(s)] = groups[groupOf(s)] || []).push(s); });
+    /* Partial shifts (Clifton 10/15/2026): someone who joins a group that is on duty now, before that group ends, shows on its card with "from HH:MM", not as a separate card. */
+    var joined = [];
+    Object.keys(groups).forEach(function (g) {
+      var endMax = Math.max.apply(null, groups[g].map(function (s) { return new Date(s.end).getTime(); }));
+      shifts.forEach(function (s) { var st = new Date(s.start).getTime(); if (st > t.getTime() && st < endMax && groupOf(s) === g) { groups[g].push(s); joined.push(s); } });
+    });
     var names = Object.keys(groups).sort(function (a, b) { return rank(a) - rank(b) || (a < b ? -1 : 1); });
     byId('groups').innerHTML = names.length ? names.map(function (g) {
       var crew = groups[g];
@@ -1020,16 +1026,27 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
     /* Next 24 hours (Clifton 10/15/2026): every shift starting in the next 24 hours, one card per start time and group, same cards as On duty now. */
     var horizon = t.getTime() + 24 * 3600000;
-    var upcoming = shifts.filter(function (s) { var st = new Date(s.start).getTime(); return st > t.getTime() && st <= horizon; }).sort(function (a, b) { return new Date(a.start) - new Date(b.start); });
+    var upcoming = shifts.filter(function (s) { var st = new Date(s.start).getTime(); return st > t.getTime() && st <= horizon && joined.indexOf(s) < 0; }).sort(function (a, b) { return new Date(a.start) - new Date(b.start); });
     if (upcoming.length) {
       var blocks = [], byKey = {};
-      upcoming.forEach(function (s) { var k = s.start + '|' + groupOf(s); if (!byKey[k]) { byKey[k] = { start: new Date(s.start), g: groupOf(s), crew: [] }; blocks.push(byKey[k]); } byKey[k].crew.push(s); });
+      upcoming.forEach(function (s) {   // a partial shift that overlaps a block of the same group joins that block's card
+        var st = new Date(s.start), en = new Date(s.end), g = groupOf(s);
+        var b = blocks.filter(function (x) { return x.g === g && st < x.end && en > x.start; })[0];
+        if (!b) { b = { start: st, end: en, g: g, crew: [] }; blocks.push(b); }
+        if (en > b.end) b.end = en;
+        b.crew.push(s);
+      });
       blocks.sort(function (a, b) { return a.start - b.start || rank(a.g) - rank(b.g); });
       byId('next').setAttribute('data-total', blocks.length);
       byId('next').innerHTML = blocks.map(function (b) {
         var day = b.start.toDateString() === t.toDateString() ? 'Today' : dow3(b.start);
         return '<div class="grp"><div class="grp__head"><span class="grp__name">' + esc(b.g) + '</span><span class="grp__hours">' + day + ' ' + span(b.crew) + '</span></div><div class="crew">' +
-          b.crew.map(function (c) { return '<div class="nx__p"><span class="crew__name">' + esc(c.name) + '</span> <span class="crew__pos">' + esc(c.position) + '</span></div>'; }).join('') + '</div></div>';
+          b.crew.map(function (c) {
+            var gs = span(b.crew).split('–'), own = [];
+            if (hhmm(new Date(c.start)) !== gs[0]) own.push('from ' + hhmm(new Date(c.start)));
+            if (hhmm(new Date(c.end)) !== gs[1]) own.push('until ' + hhmm(new Date(c.end)));
+            return '<div class="nx__p"><span class="crew__name">' + esc(c.name) + '</span> <span class="crew__pos">' + esc(c.position) + (own.length ? ' <span class="crew__own">· ' + own.join(', ') + '</span>' : '') + '</span></div>';
+          }).join('') + '</div></div>';
       }).join('');
       setMeta('nextMeta', blocks.length + (blocks.length === 1 ? ' shift' : ' shifts'));
     } else {
