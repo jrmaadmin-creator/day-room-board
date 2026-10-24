@@ -1103,8 +1103,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   }
   function renderEvents(events) {
     var t = now(), horizon = new Date(t.getTime() + 7 * 86400000);
-    var list = (events || []).map(function (e) { return { d: new Date(e.start), e: e }; })
-      .filter(function (x) { var keep = x.e.allDay ? new Date(x.d.getFullYear(), x.d.getMonth(), x.d.getDate(), 23, 59) : new Date(x.d.getTime() + 3600000); return keep >= t && x.d <= horizon; })
+    var today0 = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+    // All-day events stay until their end (exclusive, day after the last day); an old feed with no end keeps the start day only. Ongoing ones show as Today (10/23/2026).
+    var list = (events || []).map(function (e) { var d = new Date(e.start); if (e.allDay && e.end && d < today0 && new Date(e.end) > today0) d = today0; return { d: d, e: e }; })
+      .filter(function (x) { var keep = x.e.allDay ? (x.e.end ? new Date(new Date(x.e.end).getTime() - 60000) : new Date(x.d.getFullYear(), x.d.getMonth(), x.d.getDate(), 23, 59)) : new Date(x.d.getTime() + 3600000); return keep >= t && x.d <= horizon; })
       .sort(cmpEvents);
     var shown = capEvents(list, CFG.maxEvents);
     setMeta('eventsMeta', mmdd(t) + ' – ' + mmdd(horizon));
